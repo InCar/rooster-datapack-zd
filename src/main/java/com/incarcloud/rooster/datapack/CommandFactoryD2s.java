@@ -10,7 +10,7 @@ import io.netty.buffer.ByteBuf;
  * Date: 2017/9/5 0005
  * Time: 11:01
  */
-public class CommandFactoryZd implements CommandFactory {
+public class CommandFactoryD2s implements CommandFactory {
 
     @Override
     public ByteBuf createCommand(CommandType type, Object... args) throws Exception {
