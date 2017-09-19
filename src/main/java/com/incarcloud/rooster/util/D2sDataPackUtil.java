@@ -1,6 +1,8 @@
 package com.incarcloud.rooster.util;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 /**
  * zd d2s DataPack工具类
@@ -193,6 +195,31 @@ public class D2sDataPackUtil extends DataPackUtil {
         bit64 = (bit64 << 8);
         bit64 |= (buffer[0] & 0xFF);
         return bit64;
+    }
+
+    /**
+     * 获得WORD的字节码列表信息(2个字节)
+     *
+     * @param integer 数值
+     * @return
+     */
+    public static List<Byte> getWordByteList(int integer) {
+        byte[] bytes = getIntegerBytes(integer, 2);
+        List<Byte> byteList = new ArrayList<>();
+        for (int i = 0; i < bytes.length; i++) {
+            byteList.add(bytes[i]);
+        }
+        return byteList;
+    }
+
+    /**
+     * 获得整型数值的字节码信息(1个字节)
+     *
+     * @param integer　数值
+     * @return
+     */
+    public static byte getIntegerByte(int integer) {
+        return (byte) integer;
     }
 
     protected D2sDataPackUtil() {
