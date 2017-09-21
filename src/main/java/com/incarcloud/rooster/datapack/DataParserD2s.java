@@ -8,6 +8,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import javax.xml.bind.DatatypeConverter;
 import java.math.BigDecimal;
+import java.sql.BatchUpdateException;
 import java.util.*;
 
 /**
@@ -338,6 +339,7 @@ public class DataParserD2s implements IDataParser {
                         break;
                     case 0x02://车辆运行信息上报
                         //获取数据包体
+
                         byte[] dataBuffer = new byte[msgLength - 6];
                         //读取消息头部24个byte
                         buffer.readBytes(24);
@@ -4083,7 +4085,109 @@ public class DataParserD2s implements IDataParser {
                         dataPackTargetList.add(new DataPackTarget(dataPackStatus));
                         break;
                     case 0x0D://自定义透传数据上报
-                        System.out.println("自定义透传数据上报");
+                        D2sDataPackUtil.debug("=====自定义透传数据上报=====");
+                        break;
+                    case 0x80://参数查询命令反馈
+                        DataPackResult result = new DataPackResult(dataPackObject);
+                        if (resId == 1) {//命令执行成功
+                            result.setResultName("参数查询成功");
+                            //读取消息头部24个byte
+                            buffer.readBytes(24);
+                            //设置查询参数时间
+                            byte[] paramQueryTimeBuf = new byte[6];
+                            buffer.readBytes(paramQueryTimeBuf);
+                            //参数数量
+                            int paramTotal = buffer.readByte();
+
+                            for (int i = 0; i < paramTotal; i++) {
+                                //参数ID
+                                int paramId = buffer.readByte();
+                                //参数长度
+                                int paramLength = buffer.readByte();
+                                String paramValue;
+                                //参数值
+                                if (paramId == 0x01 || paramId == 0x02 || paramId == 0x03 || paramId == 0x06 || paramId == 0x0a || paramId == 0x0b || paramId == 0x0f || paramId == 0x82 || paramId == 0x84 || paramId == 0x85 || paramId == 0x86 || paramId == 0x87 || paramId == 0x88 || paramId == 0x89 || paramId == 0x8a || paramId == 0x8b || paramId == 0x8e) {
+                                    paramValue = Integer.toString(D2sDataPackUtil.readUInt2(buffer));
+                                } else if (paramId == 0x05 || paramId == 0x07 || paramId == 0x08 || paramId == 0x0E || paramId == 0x80 || paramId == 0x81 || paramId == 0x8D) {
+                                    byte[] strBuf = new byte[paramLength];
+                                    buffer.readBytes(strBuf);
+                                    paramValue = new String(strBuf);
+                                } else if (paramId == 0x09 || paramId == 0x0c || paramId == 0x10 || paramId == 0x83 || paramId == 0x8f) {
+                                    paramValue = Integer.toString(buffer.readByte());
+                                }
+                            }
+                        } else {
+                            result.setResultName("参数查询失败");
+                        }
+
+                        break;
+                    case 0x81://参数设置命令反馈
+                        DataPackResult result1 = new DataPackResult(dataPackObject);
+                        if (resId == 1) {
+                            result1.setResultName("参数设置成功");
+                            D2sDataPackUtil.debug("=====参数设置成功！=====");
+                        } else {
+                            D2sDataPackUtil.debug("=====参数设置失败！=====");
+                        }
+                        break;
+                    case 0x82://车载终端控制命令反馈
+                        DataPackResult result2 = new DataPackResult(dataPackObject);
+                        if (resId == 1) {
+                            result2.setResultName("车载终端控制命令设置成功");
+                            D2sDataPackUtil.debug("=====车载终端控制命令执行成功！=====");
+                        } else {
+                            D2sDataPackUtil.debug("=====车载终端控制命令执行失败！=====");
+                        }
+                        break;
+                    case 0x83://车辆控制命令反馈
+                        DataPackResult result3 = new DataPackResult(dataPackObject);
+                        //根据resId判断命令是否执行成功
+                        if (resId == 1) {
+                            result3.setResultName("车辆控制命令执行成功");
+                            D2sDataPackUtil.debug("=====车辆控制命令执行成功！=====");
+                        } else {
+                            D2sDataPackUtil.debug("=====车辆控制命令执行失败！=====");
+                        }
+                        break;
+                    case 0x84://报警参数查询命令反馈
+                        DataPackResult result4 = new DataPackResult(dataPackObject);
+                        //根据resId判断命令是否执行成功
+                        if (resId == 1) {
+                            result4.setResultName("报警参数查询命令执行成功");
+                            D2sDataPackUtil.debug("=====报警参数查询命令执行成功！=====");
+                            //读取消息头部24个byte
+                            buffer.readBytes(24);
+                            //设置查询参数时间
+                            byte[] paramQueryTimeBuf = new byte[6];
+                            buffer.readBytes(paramQueryTimeBuf);
+                            //参数数量
+                            int paramTotal = buffer.readByte();
+
+                            for (int i = 0; i < paramTotal; i++) {
+                                //can报文ID
+                                int canId = (int) D2sDataPackUtil.readUInt4(buffer);
+                                //开始位
+                                int start = buffer.readByte();
+                                //长度
+                                int length = buffer.readByte();
+                                //关系 0：等于，1：大于，2，小于
+                                int relation = buffer.readByte();
+                                //从CAN报文开始位指定长度的信号值
+                                int canValue = (int) D2sDataPackUtil.readUInt4(buffer);
+                            }
+                        } else {
+                            D2sDataPackUtil.debug("=====报警参数查询命令执行失败！=====");
+                        }
+                        break;
+                    case 0x85://报警参数设置命令反馈
+                        DataPackResult result5 = new DataPackResult(dataPackObject);
+                        //根据resId判断命令是否执行成功
+                        if (resId == 1) {
+                            result5.setResultName("报警参数设置命令执行成功");
+                            D2sDataPackUtil.debug("=====报警参数设置命令执行成功！=====");
+                        } else {
+                            D2sDataPackUtil.debug("=====报警参数设置命令执行失败！=====");
+                        }
                         break;
                 }
             } catch (Exception e) {
@@ -4104,7 +4208,7 @@ public class DataParserD2s implements IDataParser {
             metaDataMap.put("protocol", PROTOCOL_PREFIX + PROTOCOL_VERSION);
             //获取iccid ICCID 的后 17 位，由 17 位字码构成，字码应符合GB16735 中 4.5 的规定
             String iccid = new String(D2sDataPackUtil.getRange(dataPackBytes, 4, 21));
-            metaDataMap.put("vin", iccid);
+            metaDataMap.put("iccid", iccid);
             return metaDataMap;
         }
         return null;

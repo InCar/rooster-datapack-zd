@@ -447,8 +447,8 @@ public class CommandFactoryD2s implements CommandFactory {
         }
         //添加包体长度和校验码
         responseBytes = D2sDataPackUtil.addCheck(responseBytes);
-
-        System.out.println(ByteBufUtil.hexDump(responseBytes));
+        //打印调试信息
+        D2sDataPackUtil.debug(ByteBufUtil.hexDump(responseBytes));
 
         // return
         return Unpooled.wrappedBuffer(responseBytes);
