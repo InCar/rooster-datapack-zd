@@ -273,6 +273,8 @@ public class DataParserD2s implements IDataParser {
                 //获取iccid ICCID 的后 17 位，由 17 位字码构成，字码应符合GB16735 中 4.5 的规定
                 String iccid = new String(D2sDataPackUtil.getRange(dataPackBytes, 4, 21));
                 dataPackObject.setDeviceId(iccid);//设备ID
+                //设置数据接收时间
+                dataPackObject.setReceiveTime(new Date());
                 //获取数据加密方式0x00：数据不加密；0x01：数据经过 RSA 算法加密；0xFF：无效数据；其他预留
                 int msgEncryptMode = dataPackBytes[21] & 0xFF;
                 D2sDataPackUtil.debug("加密方式: " + msgEncryptMode);
@@ -310,7 +312,7 @@ public class DataParserD2s implements IDataParser {
                         buffer.readBytes(loginTimeBuf);
                         // dataPackLogin.setReceiveTime(new Date(D2sDataPackUtil.buf2Date(loginTimeBuf, 0)));
 
-                        // 6.检验时间（=当前系统时间）
+                        // 6.检验时间=数据采集时间
                         dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date(loginTimeBuf, 0)));
                         //登入流水号
                         int serialNoLogin = D2sDataPackUtil.readInt2(buffer);
@@ -360,6 +362,7 @@ public class DataParserD2s implements IDataParser {
                             while (index < (msgLength - 6)) {
                                 if (dataBuffer[index] == (byte) 0x01) { // 动力蓄电池电气数据
                                     DataPackBattery dataPackBattery = new DataPackBattery(dataPackObject);
+                                    dataPackBattery.setDetectionTime(detectionTime);
 
                                     //设置vin码
                                     //  dataPackBattery.setVin(iccid);
@@ -385,10 +388,13 @@ public class DataParserD2s implements IDataParser {
                                     dataPackBattery.setTotalCurrent(totalCurrent);
                                     //单体蓄电池总数
                                     Integer batteryNumber = (eleBuffer[6] & 0xFF) << 8 | (eleBuffer[7] & 0xFF);
+                                    dataPackBattery.setBatteryNumber(batteryNumber);
                                     //本帧起始电池序号
                                     Integer batteryStartIndex = (eleBuffer[8] & 0xFF) << 8 | (eleBuffer[9] & 0xFF);
+                                    dataPackBattery.setBatterySysIndex(batteryStartIndex);
                                     //本帧单体电池总数
                                     Integer batteryPacketNumber = eleBuffer[10] & 0xFF;
+                                    dataPackBattery.setBatteryPacketNumber(batteryPacketNumber);
                                     //单体电压数组
                                     List<Float> batteryVoltageList = new ArrayList<>();
                                     for (int i = 0; i < batteryPacketNumber; i++) {
@@ -401,6 +407,7 @@ public class DataParserD2s implements IDataParser {
                                     index = index + length;
                                 } else if (dataBuffer[index] == (byte) 0x02) { // 动力蓄电池包温度数据
                                     DataPackTemperature dataPackTemperature = new DataPackTemperature(dataPackObject);
+                                    dataPackTemperature.setDetectionTime(detectionTime);
                                     //设置vin码
                                     //   dataPackTemperature.setVid(iccid);
                                     index += 1;
@@ -484,6 +491,7 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int length = 13;
                                     DataPackMotor dataPackMotor = new DataPackMotor(dataPackObject);
+                                    dataPackMotor.setDetectionTime(detectionTime);
                                     //        dataPackMotor.setVin(iccid);
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
@@ -527,6 +535,7 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int length = 21;
                                     dataPackPosition = new DataPackPosition(dataPackObject);
+                                    dataPackPosition.setDetectionTime(detectionTime);
                                     //      dataPackPosition.setVin(iccid);
                                     dataPackPosition.setPositionTime(Calendar.getInstance().getTime());
                                     byte[] eleBuffer = new byte[length];
@@ -566,6 +575,7 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int length = 14;
                                     DataPackPeak dataPackPeak = new DataPackPeak(dataPackObject);
+                                    dataPackPeak.setDetectionTime(detectionTime);
                                     List<DataPackPeak.Peak> peakList = new ArrayList<>();
                                     //     dataPackPeak.setVin(iccid);
                                     byte[] eleBuffer = new byte[length];
@@ -647,16 +657,25 @@ public class DataParserD2s implements IDataParser {
                                 } else if (dataBuffer[index] == (byte) 0x09) { // 透传数据
                                     //can数据
                                     DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);//hvac数据
+                                    hvac.setDetectionTime(detectionTime);
                                     DataPackCanBcm bcm = new DataPackCanBcm(dataPackObject);//bcm
+                                    bcm.setDetectionTime(detectionTime);
                                     DataPackCanVms vms = new DataPackCanVms(dataPackObject);//vms
+                                    vms.setDetectionTime(detectionTime);
                                     DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);//peps
+                                    peps.setDetectionTime(detectionTime);
                                     DataPackCanEps eps = new DataPackCanEps(dataPackObject);//eps
+                                    eps.setDetectionTime(detectionTime);
                                     DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);//adas
+                                    adas.setDetectionTime(detectionTime);
                                     DataPackCanBms bms = new DataPackCanBms(dataPackObject);//bms
+                                    bms.setDetectionTime(detectionTime);
                                     Float[] voltageArray = new Float[42]; // 单体电池电压数组
                                     Integer[] tempratureArray = new Integer[12]; // 探头温度数组
                                     DataPackCanObc obc = new DataPackCanObc(dataPackObject);//obc
+                                    obc.setDetectionTime(detectionTime);
                                     DataPackCanMc mc = new DataPackCanMc(dataPackObject);//mc
+                                    mc.setDetectionTime(detectionTime);
 
                                     index += 1;
                                     int canPacketNumber = dataBuffer[index] & 0xFF;
@@ -2136,19 +2155,19 @@ public class DataParserD2s implements IDataParser {
                                     /*==========add===========*/
                                     dataPackTargetList.add(new DataPackTarget(hvac));//hvac数据
                                     dataPackTargetList.add(new DataPackTarget(bcm));
-                                    ;//bcm
+                                    //bcm
                                     dataPackTargetList.add(new DataPackTarget(vms));
-                                    ;//vms
+                                    //vms
                                     dataPackTargetList.add(new DataPackTarget(peps));
-                                    ;//peps
+                                    //peps
                                     dataPackTargetList.add(new DataPackTarget(eps));
-                                    ;//eps
+                                    //eps
                                     dataPackTargetList.add(new DataPackTarget(adas));
-                                    ;//adas
+                                    //adas
                                     bms.setVoltage(voltageArray);// 单体电池电压数组
                                     bms.setTemprature(tempratureArray);// 探头温度数组
                                     dataPackTargetList.add(new DataPackTarget(bms));
-                                    ;//bms
+                                    //bms
                                     dataPackTargetList.add(new DataPackTarget(obc));
                                     dataPackTargetList.add(new DataPackTarget(mc));
 
@@ -4196,7 +4215,7 @@ public class DataParserD2s implements IDataParser {
                 ReferenceCountUtil.release(buffer);
             }
         }
-        return null;
+        return dataPackTargetList;
     }
 
     @Override
