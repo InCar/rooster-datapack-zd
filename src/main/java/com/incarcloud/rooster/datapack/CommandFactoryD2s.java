@@ -9,7 +9,6 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 /**
