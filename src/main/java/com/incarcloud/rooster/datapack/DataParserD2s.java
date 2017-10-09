@@ -8,7 +8,6 @@ import io.netty.util.ReferenceCountUtil;
 
 import javax.xml.bind.DatatypeConverter;
 import java.math.BigDecimal;
-import java.sql.BatchUpdateException;
 import java.util.*;
 
 /**
@@ -147,7 +146,8 @@ public class DataParserD2s implements IDataParser {
                     //打包
                     if (check) {
                         dataPack = new DataPack(PROTOCOL_GROUP, PROTOCOL_NAME, PROTOCOL_VERSION);
-                        dataPack.setBuf(data);
+                        ByteBuf buf = Unpooled.wrappedBuffer(dataBytes);
+                        dataPack.setBuf(buf);
                         dataPackList.add(dataPack);
                     } else {
                         //数据包检验不通过，跳过数据
@@ -4013,7 +4013,7 @@ public class DataParserD2s implements IDataParser {
                         //数据采集时间
                         byte[] logOuttimeBuf = new byte[6];
                         buffer.readBytes(logOuttimeBuf);
-                        //校验时间
+                        //数据采集时间
                         dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date(logOuttimeBuf, 0)));
                         //  dataPackLogout.setReceiveTime(new Date(D2sDataPackUtil.buf2Date(logOuttimeBuf, 0)));
                         //设置车辆vin码
