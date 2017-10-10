@@ -2502,16 +2502,34 @@ public class DataParserD2s implements IDataParser {
                                 } else if (dataBufferDelay[index] == (byte) 0x09) { // 透传数据
                                     //can数据
                                     DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);//hvac数据
+                                    hvac.setDetectionTime(detectionTimeDelay);
+                                    hvac.setDeviceId(iccid);
                                     DataPackCanBcm bcm = new DataPackCanBcm(dataPackObject);//bcm
+                                    bcm.setDetectionTime(detectionTimeDelay);
+                                    bcm.setDeviceId(iccid);
                                     DataPackCanVms vms = new DataPackCanVms(dataPackObject);//vms
+                                    vms.setDetectionTime(detectionTimeDelay);
+                                    vms.setDeviceId(iccid);
                                     DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);//peps
+                                    peps.setDetectionTime(detectionTimeDelay);
+                                    peps.setDeviceId(iccid);
                                     DataPackCanEps eps = new DataPackCanEps(dataPackObject);//eps
+                                    eps.setDetectionTime(detectionTimeDelay);
+                                    eps.setDeviceId(iccid);
                                     DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);//adas
+                                    adas.setDetectionTime(detectionTimeDelay);
+                                    adas.setDeviceId(iccid);
                                     DataPackCanBms bms = new DataPackCanBms(dataPackObject);//bms
+                                    bms.setDetectionTime(detectionTimeDelay);
+                                    bms.setDeviceId(iccid);
                                     Float[] voltageArray = new Float[42]; // 单体电池电压数组
                                     Integer[] tempratureArray = new Integer[12]; // 探头温度数组
                                     DataPackCanObc obc = new DataPackCanObc(dataPackObject);//obc
+                                    obc.setDetectionTime(detectionTimeDelay);
+                                    obc.setDeviceId(iccid);
                                     DataPackCanMc mc = new DataPackCanMc(dataPackObject);//mc
+                                    mc.setDetectionTime(detectionTimeDelay);
+                                    mc.setDeviceId(iccid);
 
                                     index += 1;
                                     int canPacketNumber = dataBufferDelay[index] & 0xFF;
