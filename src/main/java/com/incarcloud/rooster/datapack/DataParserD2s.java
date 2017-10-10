@@ -324,10 +324,10 @@ public class DataParserD2s implements IDataParser {
                         dataPackLogin.setVin(new String(vinBuf));//vin
                         //  dataPackLogin.setDeviceId(iccid);//设备ID
                         //可充电蓄能子系统数 n
-                        int sysNumber = buffer.readInt();
+                        int sysNumber = buffer.readByte();
                         dataPackLogin.setSysNumber(sysNumber);
                         //可充电储能系统编码长度 m
-                        int codeLength = buffer.readInt();
+                        int codeLength = buffer.readByte();
                         dataPackLogin.setCodeLength(codeLength);
                         //可充电储能系统编码
                         String sysCode = null;
