@@ -4111,24 +4111,31 @@ public class DataParserD2s implements IDataParser {
                             int index = 0;
                             int limit = 0;
                             List<DataPackStatus.Status> statusList = new ArrayList<>();
-                            while (index < msgLength && limit++ < 100) {
+                            while (index < (msgLength-6) && limit++ < 100) {
                                 if (tboxStatusBuf[index] == (byte) 0x01) { // 电源状态
-                                    statusList.add(new DataPackStatus.Status("电源状态标志", DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：电源故障 1：电源正常"));
+                                    statusList.add(new DataPackStatus.Status("电源状态标志",
+                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：电源故障 1：电源正常"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x02) { // 通电状态
-                                    statusList.add(new DataPackStatus.Status("通电状态标志", DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：断电 1：通电"));
+                                    statusList.add(new DataPackStatus.Status("通电状态标志",
+                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：断电 1：通电"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x03) { // 通信传输状态
-                                    statusList.add(new DataPackStatus.Status("通信传输状态标志", DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：通信传输异常 1：通信传输正常"));
+                                    statusList.add(new DataPackStatus.Status("通信传输状态标志",
+                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：通信传输异常 1：通信传输正常"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x80) { // Wifi共享状态
-                                    statusList.add(new DataPackStatus.Status("Wifi共享状态", DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：未开启共享 1：开启wifi共享"));
-                                    statusList.add(new DataPackStatus.Status("当前共享wifi设备数", DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 2]}), "0~255"));
-                                    index += 3;
+                                    statusList.add(new DataPackStatus.Status("Wifi共享状态",
+                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：未开启共享 1：开启wifi共享"));
+                                    statusList.add(new DataPackStatus.Status("当前共享wifi设备数",
+                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 2]}), "0~255"));
+                                    index += 2;
                                 } else {
                                     break;
                                 }
                             }
+                            //设置tbox状态信息
+                            dataPackStatus.setStatusList(statusList);
                         }
                         //--add
                         dataPackTargetList.add(new DataPackTarget(dataPackStatus));
