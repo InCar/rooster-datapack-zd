@@ -306,7 +306,7 @@ public class DataParserD2s implements IDataParser {
                         System.out.println("车辆登入");
                         //读取消息头部24个byte
                         buffer.readBytes(24);
-                        DataPackLog dataPackLogin = new DataPackLog(dataPackObject);
+                        DataPackLogInOut dataPackLogin = new DataPackLogInOut(dataPackObject);
                         dataPackLogin.setLoginType(0);//设置车辆登录类型为车辆登入
                         //数据采集时间
                         byte[] loginTimeBuf = new byte[6];
@@ -4036,7 +4036,7 @@ public class DataParserD2s implements IDataParser {
                         System.out.println("车辆登出");
                         //读取消息头部24个byte
                         buffer.readBytes(24);
-                        DataPackLog dataPackLogout = new DataPackLog(dataPackObject);
+                        DataPackLogInOut dataPackLogout = new DataPackLogInOut(dataPackObject);
                         dataPackLogout.setLoginType(1);//设置车辆登录类型为车辆登出
                         //数据采集时间
                         byte[] logOuttimeBuf = new byte[6];
