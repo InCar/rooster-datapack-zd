@@ -659,24 +659,33 @@ public class DataParserD2s implements IDataParser {
                                     //can数据
                                     DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);//hvac数据
                                     hvac.setDetectionTime(detectionTime);
+                                    hvac.setDeviceId(iccid);
                                     DataPackCanBcm bcm = new DataPackCanBcm(dataPackObject);//bcm
                                     bcm.setDetectionTime(detectionTime);
+                                    bcm.setDeviceId(iccid);
                                     DataPackCanVms vms = new DataPackCanVms(dataPackObject);//vms
                                     vms.setDetectionTime(detectionTime);
+                                    vms.setDeviceId(iccid);
                                     DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);//peps
                                     peps.setDetectionTime(detectionTime);
+                                    peps.setDeviceId(iccid);
                                     DataPackCanEps eps = new DataPackCanEps(dataPackObject);//eps
                                     eps.setDetectionTime(detectionTime);
+                                    eps.setDeviceId(iccid);
                                     DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);//adas
                                     adas.setDetectionTime(detectionTime);
+                                    adas.setDeviceId(iccid);
                                     DataPackCanBms bms = new DataPackCanBms(dataPackObject);//bms
                                     bms.setDetectionTime(detectionTime);
+                                    bms.setDeviceId(iccid);
                                     Float[] voltageArray = new Float[42]; // 单体电池电压数组
                                     Integer[] tempratureArray = new Integer[12]; // 探头温度数组
                                     DataPackCanObc obc = new DataPackCanObc(dataPackObject);//obc
                                     obc.setDetectionTime(detectionTime);
+                                    obc.setDeviceId(iccid);
                                     DataPackCanMc mc = new DataPackCanMc(dataPackObject);//mc
                                     mc.setDetectionTime(detectionTime);
+                                    mc.setDeviceId(iccid);
 
                                     index += 1;
                                     int canPacketNumber = dataBuffer[index] & 0xFF;
