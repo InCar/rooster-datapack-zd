@@ -150,10 +150,11 @@ public class DataParserD2s implements IDataParser {
                         ByteBuf buf = Unpooled.wrappedBuffer(dataBytes);
                         dataPack.setBuf(buf);
                         dataPackList.add(dataPack);
-                    } else {
-                        //数据包检验不通过，跳过数据
-                        buffer.skipBytes(packetSize);
                     }
+//                    else {
+//                        //数据包检验不通过，跳过数据
+//                        buffer.skipBytes(packetSize);
+//                    }
                 }
             } else {
                 //协议头不符合，跳过这个字节
@@ -365,8 +366,9 @@ public class DataParserD2s implements IDataParser {
                                     DataPackBattery dataPackBattery = new DataPackBattery(dataPackObject);
                                     dataPackBattery.setDetectionTime(detectionTime);
 
-                                    //设置vin码
+                                    //设置deviceCode
                                     //  dataPackBattery.setVin(iccid);
+                                    dataPackBattery.setDeviceId(iccid);
                                     index += 1;
                                     int length = 11 + (dataBuffer[index + 10] & 0xFF) * 2;
                                     byte[] eleBuffer = new byte[length];
@@ -410,7 +412,7 @@ public class DataParserD2s implements IDataParser {
                                     DataPackTemperature dataPackTemperature = new DataPackTemperature(dataPackObject);
                                     dataPackTemperature.setDetectionTime(detectionTime);
                                     //设置vin码
-                                    //   dataPackTemperature.setVid(iccid);
+                                    dataPackTemperature.setDeviceId(iccid);
                                     index += 1;
                                     int length = 4 + ((dataBuffer[index + 2] & 0xFF << 8) | (dataBuffer[index + 3] & 0xFF));
                                     byte[] eleBuffer = new byte[length];
