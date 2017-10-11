@@ -364,11 +364,11 @@ public class DataParserD2s implements IDataParser {
                             while (index < (msgLength - 6)) {
                                 if (dataBuffer[index] == (byte) 0x01) { // 动力蓄电池电气数据
                                     DataPackBattery dataPackBattery = new DataPackBattery(dataPackObject);
-                                    dataPackBattery.setDetectionTime(detectionTime);
+                                   // dataPackBattery.setDetectionTime(detectionTime);
 
                                     //设置deviceCode
                                     //  dataPackBattery.setVin(iccid);
-                                    dataPackBattery.setDeviceId(iccid);
+                                   // dataPackBattery.setDeviceId(iccid);
                                     index += 1;
                                     int length = 11 + (dataBuffer[index + 10] & 0xFF) * 2;
                                     byte[] eleBuffer = new byte[length];
@@ -410,9 +410,9 @@ public class DataParserD2s implements IDataParser {
                                     index = index + length;
                                 } else if (dataBuffer[index] == (byte) 0x02) { // 动力蓄电池包温度数据
                                     DataPackTemperature dataPackTemperature = new DataPackTemperature(dataPackObject);
-                                    dataPackTemperature.setDetectionTime(detectionTime);
-                                    //设置vin码
-                                    dataPackTemperature.setDeviceId(iccid);
+                                   // dataPackTemperature.setDetectionTime(detectionTime);
+                                    //设置deviceCode
+                                    //dataPackTemperature.setDeviceId(iccid);
                                     index += 1;
                                     int length = 4 + ((dataBuffer[index + 2] & 0xFF << 8) | (dataBuffer[index + 3] & 0xFF));
                                     byte[] eleBuffer = new byte[length];
@@ -494,7 +494,7 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int length = 13;
                                     DataPackMotor dataPackMotor = new DataPackMotor(dataPackObject);
-                                    dataPackMotor.setDetectionTime(detectionTime);
+                                  //  dataPackMotor.setDetectionTime(detectionTime);
                                     //        dataPackMotor.setVin(iccid);
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
@@ -538,9 +538,11 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int length = 21;
                                     dataPackPosition = new DataPackPosition(dataPackObject);
-                                    dataPackPosition.setDetectionTime(detectionTime);
+                                    //dataPackPosition.setDetectionTime(detectionTime);
                                     //      dataPackPosition.setVin(iccid);
-                                    dataPackPosition.setPositionTime(Calendar.getInstance().getTime());
+                                   // dataPackPosition.setPositionTime(Calendar.getInstance().getTime());
+                                    //车辆定位时间
+                                    dataPackPosition.setPositionTime(detectionTime);
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
@@ -578,7 +580,7 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int length = 14;
                                     DataPackPeak dataPackPeak = new DataPackPeak(dataPackObject);
-                                    dataPackPeak.setDetectionTime(detectionTime);
+                                    //dataPackPeak.setDetectionTime(detectionTime);
                                     List<DataPackPeak.Peak> peakList = new ArrayList<>();
                                     //     dataPackPeak.setVin(iccid);
                                     byte[] eleBuffer = new byte[length];
@@ -660,34 +662,34 @@ public class DataParserD2s implements IDataParser {
                                 } else if (dataBuffer[index] == (byte) 0x09) { // 透传数据
                                     //can数据
                                     DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);//hvac数据
-                                    hvac.setDetectionTime(detectionTime);
-                                    hvac.setDeviceId(iccid);
+                                   // hvac.setDetectionTime(detectionTime);
+                                   // hvac.setDeviceId(iccid);
                                     DataPackCanBcm bcm = new DataPackCanBcm(dataPackObject);//bcm
-                                    bcm.setDetectionTime(detectionTime);
-                                    bcm.setDeviceId(iccid);
+                                   // bcm.setDetectionTime(detectionTime);
+                                   // bcm.setDeviceId(iccid);
                                     DataPackCanVms vms = new DataPackCanVms(dataPackObject);//vms
-                                    vms.setDetectionTime(detectionTime);
-                                    vms.setDeviceId(iccid);
+                                   // vms.setDetectionTime(detectionTime);
+                                   // vms.setDeviceId(iccid);
                                     DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);//peps
-                                    peps.setDetectionTime(detectionTime);
-                                    peps.setDeviceId(iccid);
+                                  //  peps.setDetectionTime(detectionTime);
+                                  //  peps.setDeviceId(iccid);
                                     DataPackCanEps eps = new DataPackCanEps(dataPackObject);//eps
-                                    eps.setDetectionTime(detectionTime);
-                                    eps.setDeviceId(iccid);
+                                   // eps.setDetectionTime(detectionTime);
+                                  //  eps.setDeviceId(iccid);
                                     DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);//adas
-                                    adas.setDetectionTime(detectionTime);
-                                    adas.setDeviceId(iccid);
+                                   // adas.setDetectionTime(detectionTime);
+                                  //  adas.setDeviceId(iccid);
                                     DataPackCanBms bms = new DataPackCanBms(dataPackObject);//bms
-                                    bms.setDetectionTime(detectionTime);
-                                    bms.setDeviceId(iccid);
+                                  //  bms.setDetectionTime(detectionTime);
+                                  //  bms.setDeviceId(iccid);
                                     Float[] voltageArray = new Float[42]; // 单体电池电压数组
                                     Integer[] tempratureArray = new Integer[12]; // 探头温度数组
                                     DataPackCanObc obc = new DataPackCanObc(dataPackObject);//obc
-                                    obc.setDetectionTime(detectionTime);
-                                    obc.setDeviceId(iccid);
+                                  //  obc.setDetectionTime(detectionTime);
+                                  //  obc.setDeviceId(iccid);
                                     DataPackCanMc mc = new DataPackCanMc(dataPackObject);//mc
-                                    mc.setDetectionTime(detectionTime);
-                                    mc.setDeviceId(iccid);
+                                   // mc.setDetectionTime(detectionTime);
+                                  //  mc.setDeviceId(iccid);
 
                                     index += 1;
                                     int canPacketNumber = dataBuffer[index] & 0xFF;
