@@ -456,8 +456,12 @@ public class CommandFactoryD2s implements CommandFactory {
     }
 
     public static void main(String[] args) throws Exception {
-        CommandFactoryD2s cmd = new CommandFactoryD2s();
-        // cmd.createCommand(CommandType.CLOSE_DOOR, 0x01);
-        cmd.createCommand(CommandType.COND_COLD_CLOSE, "600810915F2102811", 1000, 28);
+//        CommandFactoryD2s cmd = new CommandFactoryD2s();
+//        // cmd.createCommand(CommandType.CLOSE_DOOR, 0x01);
+//        cmd.createCommand(CommandType.COND_COLD_CLOSE, "600810915F2102811", 1000, 28);
+
+        String deviceCode = "607B0011700270200";
+        byte[] deviceCodeArr = deviceCode.getBytes();
+        System.out.println(deviceCode.getBytes());
     }
 }

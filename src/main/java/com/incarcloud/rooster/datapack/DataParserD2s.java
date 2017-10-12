@@ -61,6 +61,7 @@ public class DataParserD2s implements IDataParser {
                     crc = crc ^ (buffer[i] & 0xFF);
                 }
                 if (crc != (buffer[offset + packetSize - 1] & 0xFF)) {
+                    D2sDataPackUtil.debug("数据包校验不通过！");
                     return null;
                 } else {
                     return buffer;
@@ -364,11 +365,11 @@ public class DataParserD2s implements IDataParser {
                             while (index < (msgLength - 6)) {
                                 if (dataBuffer[index] == (byte) 0x01) { // 动力蓄电池电气数据
                                     DataPackBattery dataPackBattery = new DataPackBattery(dataPackObject);
-                                   // dataPackBattery.setDetectionTime(detectionTime);
+                                    // dataPackBattery.setDetectionTime(detectionTime);
 
                                     //设置deviceCode
                                     //  dataPackBattery.setVin(iccid);
-                                   // dataPackBattery.setDeviceId(iccid);
+                                    // dataPackBattery.setDeviceId(iccid);
                                     index += 1;
                                     int length = 11 + (dataBuffer[index + 10] & 0xFF) * 2;
                                     byte[] eleBuffer = new byte[length];
@@ -410,7 +411,7 @@ public class DataParserD2s implements IDataParser {
                                     index = index + length;
                                 } else if (dataBuffer[index] == (byte) 0x02) { // 动力蓄电池包温度数据
                                     DataPackTemperature dataPackTemperature = new DataPackTemperature(dataPackObject);
-                                   // dataPackTemperature.setDetectionTime(detectionTime);
+                                    // dataPackTemperature.setDetectionTime(detectionTime);
                                     //设置deviceCode
                                     //dataPackTemperature.setDeviceId(iccid);
                                     index += 1;
@@ -494,7 +495,7 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int length = 13;
                                     DataPackMotor dataPackMotor = new DataPackMotor(dataPackObject);
-                                  //  dataPackMotor.setDetectionTime(detectionTime);
+                                    //  dataPackMotor.setDetectionTime(detectionTime);
                                     //        dataPackMotor.setVin(iccid);
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
@@ -540,7 +541,7 @@ public class DataParserD2s implements IDataParser {
                                     dataPackPosition = new DataPackPosition(dataPackObject);
                                     //dataPackPosition.setDetectionTime(detectionTime);
                                     //      dataPackPosition.setVin(iccid);
-                                   // dataPackPosition.setPositionTime(Calendar.getInstance().getTime());
+                                    // dataPackPosition.setPositionTime(Calendar.getInstance().getTime());
                                     //车辆定位时间
                                     dataPackPosition.setPositionTime(detectionTime);
                                     byte[] eleBuffer = new byte[length];
@@ -662,34 +663,34 @@ public class DataParserD2s implements IDataParser {
                                 } else if (dataBuffer[index] == (byte) 0x09) { // 透传数据
                                     //can数据
                                     DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);//hvac数据
-                                   // hvac.setDetectionTime(detectionTime);
-                                   // hvac.setDeviceId(iccid);
+                                    // hvac.setDetectionTime(detectionTime);
+                                    // hvac.setDeviceId(iccid);
                                     DataPackCanBcm bcm = new DataPackCanBcm(dataPackObject);//bcm
-                                   // bcm.setDetectionTime(detectionTime);
-                                   // bcm.setDeviceId(iccid);
+                                    // bcm.setDetectionTime(detectionTime);
+                                    // bcm.setDeviceId(iccid);
                                     DataPackCanVms vms = new DataPackCanVms(dataPackObject);//vms
-                                   // vms.setDetectionTime(detectionTime);
-                                   // vms.setDeviceId(iccid);
+                                    // vms.setDetectionTime(detectionTime);
+                                    // vms.setDeviceId(iccid);
                                     DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);//peps
-                                  //  peps.setDetectionTime(detectionTime);
-                                  //  peps.setDeviceId(iccid);
+                                    //  peps.setDetectionTime(detectionTime);
+                                    //  peps.setDeviceId(iccid);
                                     DataPackCanEps eps = new DataPackCanEps(dataPackObject);//eps
-                                   // eps.setDetectionTime(detectionTime);
-                                  //  eps.setDeviceId(iccid);
+                                    // eps.setDetectionTime(detectionTime);
+                                    //  eps.setDeviceId(iccid);
                                     DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);//adas
-                                   // adas.setDetectionTime(detectionTime);
-                                  //  adas.setDeviceId(iccid);
+                                    // adas.setDetectionTime(detectionTime);
+                                    //  adas.setDeviceId(iccid);
                                     DataPackCanBms bms = new DataPackCanBms(dataPackObject);//bms
-                                  //  bms.setDetectionTime(detectionTime);
-                                  //  bms.setDeviceId(iccid);
+                                    //  bms.setDetectionTime(detectionTime);
+                                    //  bms.setDeviceId(iccid);
                                     Float[] voltageArray = new Float[42]; // 单体电池电压数组
                                     Integer[] tempratureArray = new Integer[12]; // 探头温度数组
                                     DataPackCanObc obc = new DataPackCanObc(dataPackObject);//obc
-                                  //  obc.setDetectionTime(detectionTime);
-                                  //  obc.setDeviceId(iccid);
+                                    //  obc.setDetectionTime(detectionTime);
+                                    //  obc.setDeviceId(iccid);
                                     DataPackCanMc mc = new DataPackCanMc(dataPackObject);//mc
-                                   // mc.setDetectionTime(detectionTime);
-                                  //  mc.setDeviceId(iccid);
+                                    // mc.setDetectionTime(detectionTime);
+                                    //  mc.setDeviceId(iccid);
 
                                     index += 1;
                                     int canPacketNumber = dataBuffer[index] & 0xFF;
@@ -4113,7 +4114,7 @@ public class DataParserD2s implements IDataParser {
                             int index = 0;
                             int limit = 0;
                             List<DataPackStatus.Status> statusList = new ArrayList<>();
-                            while (index < (msgLength-6) && limit++ < 100) {
+                            while (index < (msgLength - 6) && limit++ < 100) {
                                 if (tboxStatusBuf[index] == (byte) 0x01) { // 电源状态
                                     statusList.add(new DataPackStatus.Status("电源状态标志",
                                             DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：电源故障 1：电源正常"));
@@ -4259,16 +4260,32 @@ public class DataParserD2s implements IDataParser {
 
     @Override
     public Map<String, Object> getMetaData(ByteBuf buffer) {
+        //获取解析报文并进行校验,报文校验不通过返回null
         byte[] dataPackBytes = validate(D2sDataPackUtil.readBytes(buffer, buffer.readableBytes()));
+        //判断报文是否为空
         if (null != dataPackBytes) {
-            Map<String, Object> metaDataMap = new HashMap<>();
-            // 协议版本
-            metaDataMap.put("protocol", PROTOCOL_PREFIX + PROTOCOL_VERSION);
-            //获取iccid ICCID 的后 17 位，由 17 位字码构成，字码应符合GB16735 中 4.5 的规定
-            String iccid = new String(D2sDataPackUtil.getRange(dataPackBytes, 4, 21));
-            metaDataMap.put("iccid", iccid);
-            return metaDataMap;
+            //获取命令ID
+            int msgId = dataPackBytes[2] & 0xFF;
+
+            if (null != dataPackBytes) {
+                Map<String, Object> metaDataMap = new HashMap<>();
+                // 协议版本
+                metaDataMap.put("protocol", PROTOCOL_PREFIX + PROTOCOL_VERSION);
+                //获取iccid ICCID 的后 17 位，由 17 位字码构成，字码应符合GB16735 中 4.5 的规定
+                String deviceId = new String(D2sDataPackUtil.getRange(dataPackBytes, 4, 21));
+                metaDataMap.put("deviceId", deviceId);
+                //判断是否是登入报文,只有登入报文才有vin码，其他报文只有deviceId
+                if (1 == msgId) {
+                    /**
+                     * 车辆识别码(vin)是识别的唯一标识，由17位字码构成。前三位补0
+                     */
+                    String vin = new String(D2sDataPackUtil.getRange(dataPackBytes, 32, 52));
+                    metaDataMap.put("vin", vin);
+                }
+                return metaDataMap;
+            }
         }
+
         return null;
     }
 
