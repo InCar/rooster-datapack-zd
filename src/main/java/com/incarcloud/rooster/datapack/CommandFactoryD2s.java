@@ -96,7 +96,7 @@ public class CommandFactoryD2s implements CommandFactory {
                 byteList.add((byte) 0x02);
 
                 break;
-            case BACK_DOOR_LOCK: //远程后备箱解锁
+            case BACK_DOOR_UNLOCK: //远程后备箱解锁
                 //命令标识-车辆控制命令
                 byteList.set(2, (byte) 0x83);
                 //命令包
