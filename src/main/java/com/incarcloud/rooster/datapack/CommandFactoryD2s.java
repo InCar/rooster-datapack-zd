@@ -31,9 +31,6 @@ public class CommandFactoryD2s implements CommandFactory {
         if (null == args && 0 < args.length) {
             throw new IllegalArgumentException("args is null");
         }
-
-        // 原始数据
-        byte[] dataPackBytes = new byte[401];
         // 初始化List容器，装载【消息头+消息体】
         List<Byte> byteList = new ArrayList<>();
         //头部信息6
@@ -43,10 +40,12 @@ public class CommandFactoryD2s implements CommandFactory {
         byteList.add((byte) 0xFF);
         //预留回复命令字位置-应答标识
         byteList.add((byte) 0xFF);
-        //设置iccid
-        byte[] vinArr = D2sDataPackUtil.getRange(dataPackBytes, 4, 21);
-        for (int i = 0; i < vinArr.length; i++) {
-            byteList.add(vinArr[i]);
+        //设置deviceCode(iccid)
+        String deviceCode = (String) args[0];
+        byte[] deviceCodeArr = deviceCode.getBytes();
+
+        for (int i = 0; i < deviceCodeArr.length; i++) {
+            byteList.add(deviceCodeArr[i]);
         }
         //数据加密方式
         byteList.add((byte) 0);
@@ -455,13 +454,42 @@ public class CommandFactoryD2s implements CommandFactory {
 
     }
 
+    protected static byte[] decode(char[] data) {
+        int len = data.length;
+        if ((len & 1) != 0) {
+            throw new RuntimeException("Odd number of characters.");
+        } else {
+            byte[] out = new byte[len >> 1];
+            int i = 0;
+
+            for (int j = 0; j < len; ++i) {
+                int f = toDigit(data[j], j) << 4;
+                ++j;
+                f |= toDigit(data[j], j);
+                ++j;
+                out[i] = (byte) (f & 255);
+            }
+
+            return out;
+        }
+    }
+
+    protected static int toDigit(char ch, int index) {
+        int digit = Character.digit(ch, 16);
+        if (digit == -1) {
+            throw new RuntimeException("Illegal hexadecimal character " + ch + " at index " + index);
+        } else {
+            return digit;
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 //        CommandFactoryD2s cmd = new CommandFactoryD2s();
 //        // cmd.createCommand(CommandType.CLOSE_DOOR, 0x01);
 //        cmd.createCommand(CommandType.COND_COLD_CLOSE, "600810915F2102811", 1000, 28);
+        String deviceCode = "3630303831303931354632313032383131";
+        byte[] dd = decode(deviceCode.toCharArray());
+        System.out.println(new String(dd));
 
-        String deviceCode = "607B0011700270200";
-        byte[] deviceCodeArr = deviceCode.getBytes();
-        System.out.println(deviceCode.getBytes());
     }
 }
