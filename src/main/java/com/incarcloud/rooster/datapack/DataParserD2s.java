@@ -4280,7 +4280,7 @@ public class DataParserD2s implements IDataParser {
                      * 车辆识别码(vin)是识别的唯一标识，由17位字码构成。前三位补0
                      */
                     String vin = new String(D2sDataPackUtil.getRange(dataPackBytes, 32, 52));
-                    metaDataMap.put("vin", vin);
+                    metaDataMap.put("vin", vin.trim());
                 }
                 return metaDataMap;
             }
