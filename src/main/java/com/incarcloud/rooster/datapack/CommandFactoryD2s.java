@@ -44,6 +44,13 @@ public class CommandFactoryD2s implements CommandFactory {
         String deviceCode = (String) args[0];
         byte[] deviceCodeArr = deviceCode.getBytes();
 
+        /**
+         * deviceCode不足17位，抛出异常。
+         */
+        if (deviceCodeArr.length < 17) {
+            throw new IllegalArgumentException("device code少于17位!");
+        }
+
         for (int i = 0; i < deviceCodeArr.length; i++) {
             byteList.add(deviceCodeArr[i]);
         }
@@ -489,6 +496,7 @@ public class CommandFactoryD2s implements CommandFactory {
 //        cmd.createCommand(CommandType.COND_COLD_CLOSE, "600810915F2102811", 1000, 28);
         String deviceCode = "3630303831303931354632313032383131";
         byte[] dd = decode(deviceCode.toCharArray());
+        System.out.println(dd.length);
         System.out.println(new String(dd));
 
     }
