@@ -183,9 +183,9 @@ public class DataParserD2s implements IDataParser {
                 //预留回复命令字位置-应答标识
                 byteList.add((byte) 0xFF);
                 //设置iccid
-                byte[] vinArr = D2sDataPackUtil.getRange(dataPackBytes, 4, 21);
-                for (int i = 0; i < vinArr.length; i++) {
-                    byteList.add(vinArr[i]);
+                byte[] deviceCodeArr = D2sDataPackUtil.getRange(dataPackBytes, 4, 21);
+                for (int i = 0; i < deviceCodeArr.length; i++) {
+                    byteList.add(deviceCodeArr[i]);
                 }
                 //数据加密方式
                 byteList.add((byte) 0);
@@ -195,7 +195,7 @@ public class DataParserD2s implements IDataParser {
 
                 /*====================begin-判断msgId回复消息-begin====================*/
                 // 消息ID
-                int msgId = dataPackBytes[1] & 0xFF;
+                int msgId = dataPackBytes[2] & 0xFF;
                 int msgLength = 0;
                 byte statusCode;
 
