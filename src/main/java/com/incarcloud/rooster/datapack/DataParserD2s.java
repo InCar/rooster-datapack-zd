@@ -323,7 +323,7 @@ public class DataParserD2s implements IDataParser {
                         //车辆识别码(VIN)
                         byte[] vinBuf = new byte[20];
                         buffer.readBytes(vinBuf);
-                        dataPackLogin.setVin(new String(vinBuf));//vin
+                        dataPackLogin.setVin((new String(vinBuf).trim()));//vin
                         //  dataPackLogin.setDeviceId(iccid);//设备ID
                         //可充电蓄能子系统数 n
                         int sysNumber = buffer.readByte();

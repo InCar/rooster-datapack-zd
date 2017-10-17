@@ -497,7 +497,10 @@ public class CommandFactoryD2s implements CommandFactory {
         String deviceCode = "3630303831303931354632313032383131";
         byte[] dd = decode(deviceCode.toCharArray());
         System.out.println(dd.length);
-        System.out.println(new String(dd));
+        String code = "600810915F2102811";
+
+
+        System.out.println(code.length());
 
     }
 }
