@@ -548,9 +548,15 @@ public class DataParserD2s implements IDataParser {
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
                                     D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump(eleBuffer));
-                                    //定位状态
+                                    //定位状态：0-有效定位；1-无效定位
                                     Integer isValidate = eleBuffer[0] & 0x01;
-                                    dataPackPosition.setIsValidate(isValidate);
+                                    if(null != isValidate && 0 == isValidate) {
+                                        // 有效定位-定位方式未知
+                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_UNKNOWN);
+                                    } else {
+                                        // 无效定位
+                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_INVALID);
+                                    }
                                     //0:北纬； 1:南纬
                                     Integer latType = eleBuffer[0] & 0x02;
                                     //0:东经； 1:西经
@@ -2393,9 +2399,15 @@ public class DataParserD2s implements IDataParser {
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
                                     D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump(eleBuffer));
-                                    //定位状态
+                                    //定位状态：0-有效定位；1-无效定位
                                     Integer isValidate = eleBuffer[0] & 0x01;
-                                    dataPackPosition.setIsValidate(isValidate);
+                                    if(null != isValidate && 0 == isValidate) {
+                                        // 有效定位-定位方式未知
+                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_UNKNOWN);
+                                    } else {
+                                        // 无效定位
+                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_INVALID);
+                                    }
                                     //0:北纬； 1:南纬
                                     Integer latType = eleBuffer[0] & 0x02;
                                     //0:东经； 1:西经
