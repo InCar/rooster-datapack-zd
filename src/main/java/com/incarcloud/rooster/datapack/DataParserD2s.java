@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
+import org.springframework.beans.BeanUtils;
 
 import javax.xml.bind.DatatypeConverter;
 import java.math.BigDecimal;
@@ -267,7 +268,7 @@ public class DataParserD2s implements IDataParser {
             // 声明变量信息
             dataPackTargetList = new ArrayList<>();
             DataPackObject dataPackObject = new DataPackObject(dataPack);
-            DataPackPosition dataPackPosition;//车辆位置信息
+            DataPackPosition dataPackPosition = null;//车辆位置信息
             DataPackAlarm dataPackAlarm;//车辆报警数据
             DataPackStatus dataPackStatus;//车辆状态
 
@@ -788,6 +789,8 @@ public class DataParserD2s implements IDataParser {
                                     // mc.setDetectionTime(detectionTime);
                                     //  mc.setDeviceId(iccid);
 
+                                    DataPackAlarm alarmEps = new DataPackAlarm(dataPackObject);
+
                                     index += 1;
                                     int canPacketNumber = dataBuffer[index] & 0xFF;
                                     int length = canPacketNumber * 12;
@@ -1119,8 +1122,7 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >>> 2;
                                             bit64 = bit64 >>> 5;
                                             float leaveMileAge = (bit64 & 0xFFFF) * 0.1f;
-                                            BigDecimal bigDecimal1 = new BigDecimal(leaveMileAge)
-                                                    ; //里程
+                                            BigDecimal bigDecimal1 = new BigDecimal(leaveMileAge); //里程
                                             leaveMileAge = bigDecimal1.setScale(1, BigDecimal
                                                     .ROUND_HALF_UP).floatValue();
                                         } else if (canId == (int) 0x0CFF00DC) {//bcm BCM_General
@@ -1437,48 +1439,98 @@ public class DataParserD2s implements IDataParser {
                                             eps.setVoltage(voltage);
                                         } else if (canId == (int) 0x18FF01E0) {//eps EPS_Error
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
+
+                                            List<DataPackAlarm.Alarm> alarmList = new ArrayList<>();
+                                            //车辆vin码
+                                            //      dataPackAlarm.setVin(iccid);
+                                            if (null != dataPackPosition) {
+                                                alarmEps.setPosition(dataPackPosition);
+                                            }
+
+
                                             //打印调试信息
                                             D2sDataPackUtil.debug("EPS_Error[0x18FF01E0]--->" +
                                                     ByteBufUtil.hexDump(canBuffer));
                                             int isSensorErr = (int) (bit64 & 0x01);//EPS传感器故障
+
+                                            alarmList.add(genAlarmInfo("eps-isSensorErr", String
+                                                    .valueOf
+                                                            (isSensorErr), "EPS传感器故障"));
                                             eps.setIsSensorErr(isSensorErr);
                                             bit64 = bit64 >>> 1;
                                             int isCurrentException = (byte) (bit64 & 0x01);//EPS电流异常
+                                            alarmList.add(genAlarmInfo("eps-isCurrentException", String
+                                                    .valueOf
+                                                            (isCurrentException), "EPS电流异常"));
                                             eps.setIsCurrentException(isCurrentException);
                                             bit64 = bit64 >>> 1;
                                             int isVoltageHigher = (byte) (bit64 & 0x01);//EPS电压过高
+                                            alarmList.add(genAlarmInfo("eps-isVoltageHigher", String
+                                                    .valueOf
+                                                            (isVoltageHigher), "EPS电压过高"));
                                             eps.setIsVoltageHigher(isVoltageHigher);
                                             bit64 = bit64 >>> 1;
                                             int isTempHigher = (byte) (bit64 & 0x01);//EPS温度过高
+                                            alarmList.add(genAlarmInfo("eps-isTempHigher", String
+                                                    .valueOf
+                                                            (isTempHigher), "EPS温度过高"));
                                             eps.setIsTempHigher(isTempHigher);
                                             bit64 = bit64 >>> 1;
                                             int isVoltageLower = (byte) (bit64 & 0x01);//EPS电压过低
+                                            alarmList.add(genAlarmInfo("eps-isVoltageLower", String
+                                                    .valueOf
+                                                            (isVoltageLower), "EPS电压过低"));
                                             eps.setIsVoltageLower(isVoltageLower);
                                             bit64 = bit64 >>> 1;
                                             int isInitException = (byte) (bit64 & 0x01);//EPS初始化异常
+                                            alarmList.add(genAlarmInfo("eps-isInitException", String
+                                                    .valueOf
+                                                            (isInitException), "EPS初始化异常"));
                                             eps.setIsInitException(isInitException);
                                             bit64 = bit64 >>> 1;
                                             int isDriverErr = (byte) (bit64 & 0x01);//EPS电机驱动器故障
+                                            alarmList.add(genAlarmInfo("eps-isDriverErr", String
+                                                    .valueOf
+                                                            (isDriverErr), "EPS电机驱动器故障"));
                                             eps.setIsDriverErr(isDriverErr);//电机驱动器故障
                                             bit64 = bit64 >>> 1;
                                             int initErr = (byte) (bit64 & 0x01);//电机初始化及轮询故障
+                                            alarmList.add(genAlarmInfo("eps-initErr", String
+                                                    .valueOf
+                                                            (initErr), "电机初始化及轮询故障"));
                                             eps.setIsMotorInitErr(initErr);
                                             bit64 = bit64 >>> 1;
                                             int angSensorErr = (byte) (bit64 & 0x01);//角度传感器故障
+                                            alarmList.add(genAlarmInfo("eps-angSensorErr", String
+                                                    .valueOf
+                                                            (angSensorErr), "角度传感器故障"));
                                             eps.setIsAngleSensorErr(angSensorErr);
                                             bit64 = bit64 >>> 1;
                                             int canEcuErr = (byte) (bit64 & 0x01);//CAN控制器故障
+                                            alarmList.add(genAlarmInfo("eps-canEcuErr", String
+                                                    .valueOf
+                                                            (canEcuErr), "CAN控制器故障"));
                                             eps.setIsCanCtrlErr(canEcuErr);
                                             bit64 = bit64 >>> 1;
-                                            int vspeedSignalEnable = (byte) (bit64 & 0x01);
-                                            //钥匙位置或车速信号失效
+                                            int vspeedSignalEnable = (byte) (bit64 & 0x01); //钥匙位置或车速信号失效
+                                            alarmList.add(genAlarmInfo("eps-vspeedSignalEnable", String
+                                                    .valueOf
+                                                            (vspeedSignalEnable), "钥匙位置或车速信号失效"));
                                             eps.setIsKeyInvalid(vspeedSignalEnable);
                                             bit64 = bit64 >>> 1;
                                             int tempSensorLower = (byte) (bit64 & 0x01);//温度传感器超下限
+                                            alarmList.add(genAlarmInfo("eps-tempSensorLower", String
+                                                    .valueOf
+                                                            (tempSensorLower), "温度传感器超下限"));
                                             eps.setIsTempLowerLmt(tempSensorLower);
                                             bit64 = bit64 >>> 1;
                                             int tempSensorHigher = (byte) (bit64 & 0x01);//温度传感器超上限
+                                            alarmList.add(genAlarmInfo("eps-tempSensorHigher", String
+                                                    .valueOf
+                                                            (tempSensorHigher), "温度传感器超上限"));
                                             eps.setIsTempHigher(tempSensorHigher);
+
+                                            alarmEps.setAlarmList(alarmList);
                                         } else if (canId == (int) 0x04FF00C8) {//acu ACU_SysSt
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
@@ -2010,8 +2062,7 @@ public class DataParserD2s implements IDataParser {
                                             bms.setDischargerCurrentBiggerl3
                                                     (dischargerCurrentBiggerL3);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01)
-                                                    ;//放电电流超大-3级
+                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01);//放电电流超大-3级
                                             bms.setDischargerCurrentBiggestl3
                                                     (dischargerCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
@@ -2589,11 +2640,12 @@ public class DataParserD2s implements IDataParser {
                                     //adas
                                     bms.setVoltage(voltageArray);// 单体电池电压数组
                                     bms.setTemprature(tempratureArray);// 探头温度数组
-                                    dataPackTargetList.add(new DataPackTarget(bms));
                                     //bms
+                                    dataPackTargetList.add(new DataPackTarget(bms));
                                     dataPackTargetList.add(new DataPackTarget(obc));
                                     dataPackTargetList.add(new DataPackTarget(mc));
-
+                                    //eps报警数据
+                                    dataPackTargetList.add(new DataPackTarget(alarmEps));
                                     index = index + length;//索引增加
                                 } else {
                                     break;
@@ -4244,8 +4296,7 @@ public class DataParserD2s implements IDataParser {
                                             bms.setDischargerCurrentBiggerl3
                                                     (dischargerCurrentBiggerL3);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01)
-                                                    ;//放电电流超大-3级
+                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01);//放电电流超大-3级
                                             bms.setDischargerCurrentBiggestl3
                                                     (dischargerCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
@@ -4828,6 +4879,7 @@ public class DataParserD2s implements IDataParser {
                                     dataPackTargetList.add(new DataPackTarget(obc));
                                     dataPackTargetList.add(new DataPackTarget(mc));
 
+
                                     index = index + length;//索引增加
                                 } else {
                                     break;
@@ -4986,7 +5038,7 @@ public class DataParserD2s implements IDataParser {
                                         paramId
                                                 == 0x0f || paramId == 0x82 || paramId == 0x84 ||
                                         paramId
-                                        == 0x85
+                                                == 0x85
                                         || paramId == 0x86 || paramId == 0x87 || paramId == 0x88 ||
                                         paramId == 0x89 || paramId == 0x8a || paramId == 0x8b ||
                                         paramId
@@ -5118,6 +5170,25 @@ public class DataParserD2s implements IDataParser {
         }
 
         return null;
+    }
+
+
+    /**
+     * 生成报警信息
+     *
+     * @param alarmCode  报警编码
+     * @param alarmValue 字段值
+     * @param alarmName  报警名称
+     * @return
+     */
+    private DataPackAlarm.Alarm genAlarmInfo(String alarmCode, String alarmValue, String
+            alarmName) {
+        DataPackAlarm.Alarm alarmInfo = new DataPackAlarm
+                .Alarm();
+        alarmInfo.setAlarmCode(alarmCode);
+        alarmInfo.setAlarmName(alarmName);
+        alarmInfo.setAlarmValue(alarmValue);
+        return alarmInfo;
     }
 
 }
