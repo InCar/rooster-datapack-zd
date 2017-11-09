@@ -9,6 +9,8 @@ import io.netty.util.ReferenceCountUtil;
 
 import javax.xml.bind.DatatypeConverter;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
 
 /**
@@ -98,7 +100,8 @@ public class DataParserD2s implements IDataParser {
         while (buffer.isReadable()) {
             offset1 = buffer.readerIndex();
             //查找协议头标识--->0x23开头
-            if (buffer.getByte(offset1) == (byte) 0x23 && buffer.getByte(offset1 + 1) == (byte) 0x23) {
+            if (buffer.getByte(offset1) == (byte) 0x23 && buffer.getByte(offset1 + 1) == (byte)
+                    0x23) {
                 if (buffer.readableBytes() > GB_LENGTH) {
                     //记录读取的位置
                     buffer.markReaderIndex();
@@ -313,10 +316,12 @@ public class DataParserD2s implements IDataParser {
                         //数据采集时间
                         byte[] loginTimeBuf = new byte[6];
                         buffer.readBytes(loginTimeBuf);
-                        // dataPackLogin.setReceiveTime(new Date(D2sDataPackUtil.buf2Date(loginTimeBuf, 0)));
+                        // dataPackLogin.setReceiveTime(new Date(D2sDataPackUtil.buf2Date
+                        // (loginTimeBuf, 0)));
 
                         // 6.检验时间=数据采集时间
-                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date(loginTimeBuf, 0)));
+                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date
+                                (loginTimeBuf, 0)));
                         //登入流水号
                         int serialNoLogin = D2sDataPackUtil.readInt2(buffer);
                         dataPackLogin.setSerialNo(serialNoLogin);
@@ -364,7 +369,8 @@ public class DataParserD2s implements IDataParser {
                             int index = 0;
                             while (index < (msgLength - 6)) {
                                 if (dataBuffer[index] == (byte) 0x01) { // 动力蓄电池电气数据
-                                    DataPackBattery dataPackBattery = new DataPackBattery(dataPackObject);
+                                    DataPackBattery dataPackBattery = new DataPackBattery
+                                            (dataPackObject);
                                     // dataPackBattery.setDetectionTime(detectionTime);
 
                                     //设置deviceCode
@@ -375,7 +381,8 @@ public class DataParserD2s implements IDataParser {
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("动力蓄电池电气数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("动力蓄电池电气数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //动力蓄电池字子系统个数
                                     Integer batterySysNumber = eleBuffer[0] & 0xFF;
                                     dataPackBattery.setBatterySysNumber(batterySysNumber);
@@ -383,18 +390,24 @@ public class DataParserD2s implements IDataParser {
                                     Integer batterySysIndex = eleBuffer[1] & 0xFF;
                                     dataPackBattery.setBatterySysIndex(batterySysIndex);
                                     //动力蓄电池电压
-                                    Float totalVoltage = (float) ((eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] & 0xFF)) / 10;
-                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalVoltage = (float) ((eleBuffer[2] & 0xFF) << 8 |
+                                            (eleBuffer[3] & 0xFF)) / 10;
+                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackBattery.setTotalVoltage(totalVoltage);
                                     //动力蓄电池电流
-                                    Float totalCurrent = (float) ((eleBuffer[4] & 0xFF) << 8 | (eleBuffer[5] & 0xFF)) / 10 - 1000;
-                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalCurrent = (float) ((eleBuffer[4] & 0xFF) << 8 |
+                                            (eleBuffer[5] & 0xFF)) / 10 - 1000;
+                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackBattery.setTotalCurrent(totalCurrent);
                                     //单体蓄电池总数
-                                    Integer batteryNumber = (eleBuffer[6] & 0xFF) << 8 | (eleBuffer[7] & 0xFF);
+                                    Integer batteryNumber = (eleBuffer[6] & 0xFF) << 8 |
+                                            (eleBuffer[7] & 0xFF);
                                     dataPackBattery.setBatteryNumber(batteryNumber);
                                     //本帧起始电池序号
-                                    Integer batteryStartIndex = (eleBuffer[8] & 0xFF) << 8 | (eleBuffer[9] & 0xFF);
+                                    Integer batteryStartIndex = (eleBuffer[8] & 0xFF) << 8 |
+                                            (eleBuffer[9] & 0xFF);
                                     dataPackBattery.setBatterySysIndex(batteryStartIndex);
                                     //本帧单体电池总数
                                     Integer batteryPacketNumber = eleBuffer[10] & 0xFF;
@@ -402,7 +415,10 @@ public class DataParserD2s implements IDataParser {
                                     //单体电压数组
                                     List<Float> batteryVoltageList = new ArrayList<>();
                                     for (int i = 0; i < batteryPacketNumber; i++) {
-                                        batteryVoltageList.add(new BigDecimal(((float) ((eleBuffer[11 + i * 2] & 0xFF) << 8 | (eleBuffer[12 + i * 2] & 0xFF)) / 1000)).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+                                        batteryVoltageList.add(new BigDecimal(((float) (
+                                                (eleBuffer[11 + i * 2] & 0xFF) << 8 |
+                                                        (eleBuffer[12 + i * 2] & 0xFF)) / 1000)).setScale
+                                                (3, BigDecimal.ROUND_HALF_UP).floatValue());
                                     }
                                     dataPackBattery.setBatteryVoltages(batteryVoltageList);
                                     //-add
@@ -410,16 +426,19 @@ public class DataParserD2s implements IDataParser {
                                     //索引增加
                                     index = index + length;
                                 } else if (dataBuffer[index] == (byte) 0x02) { // 动力蓄电池包温度数据
-                                    DataPackTemperature dataPackTemperature = new DataPackTemperature(dataPackObject);
+                                    DataPackTemperature dataPackTemperature = new
+                                            DataPackTemperature(dataPackObject);
                                     // dataPackTemperature.setDetectionTime(detectionTime);
                                     //设置deviceCode
                                     //dataPackTemperature.setDeviceId(iccid);
                                     index += 1;
-                                    int length = 4 + ((dataBuffer[index + 2] & 0xFF << 8) | (dataBuffer[index + 3] & 0xFF));
+                                    int length = 4 + ((dataBuffer[index + 2] & 0xFF << 8) |
+                                            (dataBuffer[index + 3] & 0xFF));
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("动力蓄电池电气数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("动力蓄电池电气数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //动力蓄电池总成个数
                                     Integer batterySysNumber = eleBuffer[0] & 0xFF;
                                     dataPackTemperature.setBatterySysNumber(batterySysNumber);
@@ -427,7 +446,8 @@ public class DataParserD2s implements IDataParser {
                                     Integer sysIndex = eleBuffer[1] & 0xFF;
                                     dataPackTemperature.setSysIndex(sysIndex);
                                     //电池温度探针个数
-                                    Integer number = (eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] & 0xFF);
+                                    Integer number = (eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] &
+                                            0xFF);
                                     dataPackTemperature.setNumber(number);
                                     //电池总各温度探针检测到的温度值
                                     List<Integer> temperatureList = new ArrayList<>();
@@ -439,14 +459,16 @@ public class DataParserD2s implements IDataParser {
                                     dataPackTargetList.add(new DataPackTarget(dataPackTemperature));
                                     index = index + length;
                                 } else if (dataBuffer[index] == (byte) 0x03) { // 整车数据
-                                    DataPackOverview dataPackOverview = new DataPackOverview(dataPackObject);
+                                    DataPackOverview dataPackOverview = new DataPackOverview
+                                            (dataPackObject);
                                     //     dataPackOverview.setVin(iccid);
                                     index += 1;
                                     int length = 20;
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("整车数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("整车数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //车辆状态
                                     Integer vehicleStatus = eleBuffer[0] & 0xFF;
                                     dataPackOverview.setCarStatus(vehicleStatus);
@@ -457,20 +479,29 @@ public class DataParserD2s implements IDataParser {
                                     Integer runStatus = eleBuffer[2] & 0xFF;
                                     dataPackOverview.setRunStatus(runStatus);
                                     //车速
-                                    Float vehicleSpeed = (float) ((eleBuffer[3] & 0xFF) << 8 | (eleBuffer[4] & 0xFF)) / 10;
-                                    vehicleSpeed = new BigDecimal(vehicleSpeed).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float vehicleSpeed = (float) ((eleBuffer[3] & 0xFF) << 8 |
+                                            (eleBuffer[4] & 0xFF)) / 10;
+                                    vehicleSpeed = new BigDecimal(vehicleSpeed).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackOverview.setVehicleSpeed(vehicleSpeed);
                                     //累计里程
-                                    Double mileAge = (double) ((eleBuffer[5] & 0xFF) << 24 | (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 | (eleBuffer[8] & 0xFF));
-                                    mileAge = new BigDecimal(mileAge).setScale(1, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double mileAge = (double) ((eleBuffer[5] & 0xFF) << 24 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[8] & 0xFF)) / 10;
+                                    mileAge = new BigDecimal(mileAge).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackOverview.setMileage(mileAge);
                                     //总电压
-                                    Float totalVoltage = (float) ((eleBuffer[9] & 0xFF) << 8 | (eleBuffer[10] & 0xFF)) / 10;
-                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalVoltage = (float) ((eleBuffer[9] & 0xFF) << 8 |
+                                            (eleBuffer[10] & 0xFF)) / 10;
+                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackOverview.setVoltage(totalVoltage);
                                     //总电流
-                                    Float totalCurrent = (float) ((eleBuffer[11] & 0xFF) << 8 | (eleBuffer[12] & 0xFF)) / 10 - 1000;
-                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalCurrent = (float) ((eleBuffer[11] & 0xFF) << 8 |
+                                            (eleBuffer[12] & 0xFF)) / 10 - 1000;
+                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackOverview.setTotalCurrent(totalCurrent);
                                     //SOC
                                     Integer soc = eleBuffer[13] & 0xFF;
@@ -485,7 +516,8 @@ public class DataParserD2s implements IDataParser {
                                     Integer driveBrakeStatus = eleBuffer[15] >>> 4 & 0x03;
                                     dataPackOverview.setDriveBrakeStatus(driveBrakeStatus);
                                     //绝缘电阻
-                                    Integer issueValue = (eleBuffer[16] & 0xFF) << 8 | eleBuffer[17] & 0xFF;
+                                    Integer issueValue = (eleBuffer[16] & 0xFF) << 8 |
+                                            eleBuffer[17] & 0xFF;
                                     dataPackOverview.setIssueValue(issueValue);
                                     //-add
                                     dataPackTargetList.add(new DataPackTarget(dataPackOverview));
@@ -500,7 +532,8 @@ public class DataParserD2s implements IDataParser {
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("汽车电机部分数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("汽车电机部分数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //电机个数
                                     Integer motorNumber = eleBuffer[0] & 0xFF;
                                     dataPackMotor.setMotorTotal(motorNumber);
@@ -512,24 +545,32 @@ public class DataParserD2s implements IDataParser {
                                     dataPackMotor.setMotorStatus(motorStatus);
                                     //驱动电机控制器温度
                                     Integer motorControlerTemperature = (eleBuffer[3] & 0xFF) - 40;
-                                    dataPackMotor.setControllerTemperature(motorControlerTemperature);
+                                    dataPackMotor.setControllerTemperature
+                                            (motorControlerTemperature);
                                     //驱动电机转速
-                                    Integer motorRpm = ((eleBuffer[4] & 0xFF) << 8 | eleBuffer[5] & 0xFF) - 20000;
+                                    Integer motorRpm = ((eleBuffer[4] & 0xFF) << 8 | eleBuffer[5]
+                                            & 0xFF) - 20000;
                                     dataPackMotor.setSpeed(motorRpm);
                                     //驱动电机转矩
-                                    Float motorNm = (float) (((eleBuffer[6] & 0xFF) << 8 | (eleBuffer[7] & 0xFF)) - 20000) / 10;
-                                    motorNm = new BigDecimal(motorNm).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float motorNm = (float) (((eleBuffer[6] & 0xFF) << 8 |
+                                            (eleBuffer[7] & 0xFF)) - 20000) / 10;
+                                    motorNm = new BigDecimal(motorNm).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     dataPackMotor.setTorque(motorNm);
                                     //驱动电机温度
                                     Integer motorTemperature = (eleBuffer[8] & 0xFF) - 40;
                                     dataPackMotor.setMotorTemperature(motorTemperature);
                                     //电机控制器输入电压
-                                    Float motorInputVoltage = (float) ((eleBuffer[9] & 0xFF) << 8 | (eleBuffer[10] & 0xFF)) / 10;
-                                    motorInputVoltage = new BigDecimal(motorInputVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float motorInputVoltage = (float) ((eleBuffer[9] & 0xFF) << 8
+                                            | (eleBuffer[10] & 0xFF)) / 10;
+                                    motorInputVoltage = new BigDecimal(motorInputVoltage)
+                                            .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackMotor.setControllerInputVoltage(motorInputVoltage);
                                     //电机控制器直流母线电流
-                                    Float motorBusCurrent = (float) ((eleBuffer[11] & 0xFF) << 8 | (eleBuffer[12] & 0xFF)) / 10 - 1000;
-                                    motorBusCurrent = new BigDecimal(motorBusCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float motorBusCurrent = (float) ((eleBuffer[11] & 0xFF) << 8
+                                            | (eleBuffer[12] & 0xFF)) / 10 - 1000;
+                                    motorBusCurrent = new BigDecimal(motorBusCurrent).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackMotor.setControllerDirectCurrent(motorBusCurrent);
                                     //-add
                                     dataPackTargetList.add(new DataPackTarget(dataPackMotor));
@@ -541,12 +582,14 @@ public class DataParserD2s implements IDataParser {
                                     dataPackPosition = new DataPackPosition(dataPackObject);
                                     //dataPackPosition.setDetectionTime(detectionTime);
                                     //      dataPackPosition.setVin(iccid);
-                                    // dataPackPosition.setPositionTime(Calendar.getInstance().getTime());
+                                    // dataPackPosition.setPositionTime(Calendar.getInstance()
+                                    // .getTime());
                                     //车辆定位时间
                                     dataPackPosition.setPositionTime(detectionTime);
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
+
                                     D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump(eleBuffer));
                                     //定位状态：0-有效定位；1-无效定位
                                     Integer isValidate = eleBuffer[0] & 0x01;
@@ -557,28 +600,41 @@ public class DataParserD2s implements IDataParser {
                                         // 无效定位
                                         dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_INVALID);
                                     }
+
                                     //0:北纬； 1:南纬
                                     Integer latType = eleBuffer[0] & 0x02;
                                     //0:东经； 1:西经
                                     Integer lngType = eleBuffer[0] & 0x04;
                                     //经度
-                                    Double longitude = (double) ((eleBuffer[1] & 0xFF) << 24 | (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF) << 8 | (eleBuffer[4] & 0xFF)) * 0.000001f;
-                                    longitude = new BigDecimal(longitude).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double longitude = (double) ((eleBuffer[1] & 0xFF) << 24 |
+                                            (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF) << 8 |
+                                            (eleBuffer[4] & 0xFF)) * 0.000001f;
+                                    longitude = new BigDecimal(longitude).setScale(6, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setLongitude(longitude);
                                     //纬度
-                                    Double latitude = (double) ((eleBuffer[5] & 0xFF) << 24 | (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 | (eleBuffer[8] & 0xFF)) * 0.000001f;
-                                    latitude = new BigDecimal(latitude).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double latitude = (double) ((eleBuffer[5] & 0xFF) << 24 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[8] & 0xFF)) * 0.000001f;
+                                    latitude = new BigDecimal(latitude).setScale(6, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setLatitude(latitude);
                                     //速度
-                                    Float speed = (float) ((eleBuffer[9] & 0xFF) << 8 | (eleBuffer[10] & 0xFF)) / 10;
-                                    speed = new BigDecimal(speed).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float speed = (float) ((eleBuffer[9] & 0xFF) << 8 |
+                                            (eleBuffer[10] & 0xFF)) / 10;
+                                    speed = new BigDecimal(speed).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     dataPackPosition.setSpeed(speed);
                                     //海拔
-                                    Double altitude = (double) ((eleBuffer[11] & 0xFF) << 24 | (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF) << 8 | (eleBuffer[14] & 0xFF)) / 10;
-                                    altitude = new BigDecimal(altitude).setScale(1, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double altitude = (double) ((eleBuffer[11] & 0xFF) << 24 |
+                                            (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF) << 8 |
+                                            (eleBuffer[14] & 0xFF)) / 10;
+                                    altitude = new BigDecimal(altitude).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setAltitude(altitude);
                                     //方向
-                                    Float direction = (float) ((eleBuffer[15] & 0xFF) << 8 | (eleBuffer[16] & 0xFF));
+                                    Float direction = (float) ((eleBuffer[15] & 0xFF) << 8 |
+                                            (eleBuffer[16] & 0xFF));
                                     dataPackPosition.setDirection(direction);
                                     dataPackTargetList.add(new DataPackTarget(dataPackPosition));
                                     index = index + length;
@@ -593,73 +649,92 @@ public class DataParserD2s implements IDataParser {
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("极值数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("极值数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
 
                                     //最高电压电池子系统号
                                     Integer batterySystemMaxNo = eleBuffer[0] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高电压电池子系统号",
-                                            batterySystemMaxNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batterySystemMaxNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //最高电压电池单体代号
                                     Integer batteryVoltageMaxNo = eleBuffer[1] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高电压电池单体代号",
-                                            batteryVoltageMaxNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batteryVoltageMaxNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //电池单体电压最高值
-                                    Float batteryVoltageMaxValue = (float) ((eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] & 0xFF)) / 1000;
-                                    batteryVoltageMaxValue = new BigDecimal(batteryVoltageMaxValue).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float batteryVoltageMaxValue = (float) ((eleBuffer[2] & 0xFF)
+                                            << 8 | (eleBuffer[3] & 0xFF)) / 1000;
+                                    batteryVoltageMaxValue = new BigDecimal
+                                            (batteryVoltageMaxValue).setScale(3, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     peakList.add(new DataPackPeak.Peak(null, "电池单体电压最高值",
-                                            batteryVoltageMaxValue.toString(), "V", "有效值范围： 0～15000（表示 0V～15V）"));
+                                            batteryVoltageMaxValue.toString(), "V", "有效值范围： " +
+                                            "0～15000（表示 0V～15V）"));
 
                                     //最低电压电池子系统号
                                     Integer batterySystemMinNo = eleBuffer[4] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低电压电池子系统号",
-                                            batterySystemMinNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batterySystemMinNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
 
                                     //最低电压电池单体代号
                                     Integer batteryVoltageMinNo = eleBuffer[5] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低电压电池单体代号",
-                                            batteryVoltageMinNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batteryVoltageMinNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
 
                                     //电池单体电压最低值
-                                    Float batteryVoltageMinValue = (float) ((eleBuffer[6] & 0xFF) << 8 | (eleBuffer[7] & 0xFF)) / 1000;
-                                    batteryVoltageMinValue = new BigDecimal(batteryVoltageMinValue).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float batteryVoltageMinValue = (float) ((eleBuffer[6] & 0xFF)
+                                            << 8 | (eleBuffer[7] & 0xFF)) / 1000;
+                                    batteryVoltageMinValue = new BigDecimal
+                                            (batteryVoltageMinValue).setScale(3, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     peakList.add(new DataPackPeak.Peak(null, "最高电压电池单体代号",
-                                            batteryVoltageMinValue.toString(), "V", "有效值范围： 0～15000（表示 0V～15V）"));
+                                            batteryVoltageMinValue.toString(), "V", "有效值范围： " +
+                                            "0～15000（表示 0V～15V）"));
 
 
                                     //最高温度子系统号
                                     Integer temperatureHighestSystemNo = eleBuffer[8] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高温度子系统号",
-                                            temperatureHighestSystemNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureHighestSystemNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
 
                                     //最高温度探针单体代号
                                     Integer temperatureHighestNo = eleBuffer[9] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高温度探针单体代号",
-                                            temperatureHighestNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureHighestNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //蓄电池中最高温度值
                                     Integer temperatureHighestValue = (eleBuffer[10] & 0xFF) - 40;
                                     peakList.add(new DataPackPeak.Peak(null, "蓄电池中最高温度值",
-                                            temperatureHighestValue.toString(), "℃", "有效值范围： 0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
+                                            temperatureHighestValue.toString(), "℃", "有效值范围： " +
+                                            "0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
 
                                     //最低温度子系统号
                                     Integer temperatureLowestSystemNo = eleBuffer[11] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低温度子系统号",
-                                            temperatureLowestSystemNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureLowestSystemNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //最低温度探针子系统代号
                                     Integer temperatureLowestNo = eleBuffer[12] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低温度探针子系统代号",
-                                            temperatureLowestNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureLowestNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //蓄电池中最低温度值
                                     Integer temperatureLowestValue = (eleBuffer[13] & 0xFF) - 40;
                                     peakList.add(new DataPackPeak.Peak(null, "蓄电池中最低温度值",
-                                            temperatureLowestValue.toString(), "℃", "有效值范围： 0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
+                                            temperatureLowestValue.toString(), "℃", "有效值范围： " +
+                                            "0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
 
                                     dataPackPeak.setPeakList(peakList);
                                     //-add
@@ -668,7 +743,8 @@ public class DataParserD2s implements IDataParser {
                                     index = index + length;
                                 } else if (dataBuffer[index] == (byte) 0x09) { // 透传数据
                                     //can数据
-                                    DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);//hvac数据
+                                    DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);
+                                    //hvac数据
                                     // hvac.setDetectionTime(detectionTime);
                                     // hvac.setDeviceId(iccid);
                                     DataPackCanBcm bcm = new DataPackCanBcm(dataPackObject);//bcm
@@ -677,13 +753,15 @@ public class DataParserD2s implements IDataParser {
                                     DataPackCanVms vms = new DataPackCanVms(dataPackObject);//vms
                                     // vms.setDetectionTime(detectionTime);
                                     // vms.setDeviceId(iccid);
-                                    DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);//peps
+                                    DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);
+                                    //peps
                                     //  peps.setDetectionTime(detectionTime);
                                     //  peps.setDeviceId(iccid);
                                     DataPackCanEps eps = new DataPackCanEps(dataPackObject);//eps
                                     // eps.setDetectionTime(detectionTime);
                                     //  eps.setDeviceId(iccid);
-                                    DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);//adas
+                                    DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);
+                                    //adas
                                     // adas.setDetectionTime(detectionTime);
                                     //  adas.setDeviceId(iccid);
                                     DataPackCanBms bms = new DataPackCanBms(dataPackObject);//bms
@@ -701,114 +779,160 @@ public class DataParserD2s implements IDataParser {
                                     index += 1;
                                     int canPacketNumber = dataBuffer[index] & 0xFF;
                                     int length = canPacketNumber * 12;
+                                    byte[] canAllBufferAndLength = new byte[length + 1];
+                                    System.arraycopy(dataBuffer, index, canAllBufferAndLength, 0,
+                                            length);
+                                    //打印调试信息
+                                    D2sDataPackUtil.debug("透传数据0000--->" + ByteBufUtil.hexDump
+                                            (canAllBufferAndLength));
                                     index += 1;
                                     byte[] canAllBuffer = new byte[length];
                                     System.arraycopy(dataBuffer, index, canAllBuffer, 0, length);
 
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("透传数据--->" + ByteBufUtil.hexDump(canAllBuffer));
+                                    D2sDataPackUtil.debug("透传数据--->" + ByteBufUtil.hexDump
+                                            (canAllBuffer));
 
                                     int offset = 0;
                                     for (int i = 0; i < canPacketNumber; i++) {
                                         //can id
-                                        int canId = D2sDataPackUtil.getInt4Bigendian(canAllBuffer, offset + i * 12, offset + i * 12 + 4);
-                                        byte[] canBuffer = D2sDataPackUtil.getRange(canAllBuffer, offset + i * 12 + 4, offset + i * 12 + 12);
+                                        int canId = D2sDataPackUtil.getInt4Bigendian
+                                                (canAllBuffer, offset + i * 12, offset + i * 12 + 4);
+                                        byte[] canBuffer = D2sDataPackUtil.getRange(canAllBuffer,
+                                                offset + i * 12 + 4, offset + i * 12 + 12);
+                                        byte[] canBufferAll = D2sDataPackUtil.getRange
+                                                (canAllBuffer, offset + i * 12, offset + i * 12 + 12);
                                         DataPackCanVersion dataPackCanVersion = null;
                                         if (canId == (int) 0x18FF64DA) { //icu版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("icu");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("icu版本[0x18FF64DA]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("icu版本[0x18FF64DA]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF6401) { //vms版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("vms");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("vms版本[0x18FF6401]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("vms版本[0x18FF6401]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64F4) {//bms版本
 
                                         } else if (canId == (int) 0x18FF64EF) {//mc版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("mc");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("mc版本[0x18FF64EF]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("mc版本[0x18FF64EF]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DD) {//peps版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("peps");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("peps版本[0x18FF64DD]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("peps版本[0x18FF64DD]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64E5) {//obc版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("obc");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("obc版本[0x18FF64E5]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("obc版本[0x18FF64E5]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DE) {//hvac版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("hvac");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("hvac版本[0x18FF64DE]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("hvac版本[0x18FF64DE]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64E7) {//gprs版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("gprs");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("gprs版本[0x18FF64E7]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("gprs版本[0x18FF64E7]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DC) {//bcm版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("bcm");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("bcm版本[0x18FF64DC]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("bcm版本[0x18FF64DC]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DF) {//adas版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("adas");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("adas版本[0x18FF64DF]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("adas版本[0x18FF64DF]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DB) {//gps版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("gps");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[6];
                                             System.arraycopy(canBuffer, 0, bf, 0, 6);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("gps版本[0x18FF64DB]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 6));
+                                            D2sDataPackUtil.debug("gps版本[0x18FF64DB]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 6));
                                         } else if (canId == (int) 0x08FF00DD) {//peps PEPS_SEND1_MSG
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("PEPS_SEND1_MSG[0x08FF00DD]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("PEPS_SEND1_MSG[0x08FF00DD]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("PEPS_SEND1_MSG[0x08FF00DD]--->" + ByteBufUtil
+                                                            .hexDump(canBufferAll));
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             int rkeLockCmd = (int) (bit64 & 0x0F);//遥控器状态
                                             peps.setRkelockCmd(rkeLockCmd);
@@ -822,7 +946,8 @@ public class DataParserD2s implements IDataParser {
                                             int pepsIcuAlarm = (int) (bit64 & 0x0F);//仪表报警提示
                                             peps.setPepsicuAlarm(pepsIcuAlarm);
                                             bit64 = bit64 >> 4;
-                                            int pepsEscLpowerEnable = (int) (bit64 & 0x03);//ESCL电源状态
+                                            int pepsEscLpowerEnable = (int) (bit64 & 0x03);
+                                            //ESCL电源状态
                                             peps.setPepsEsclpowerEnable(pepsEscLpowerEnable);
                                             bit64 = bit64 >> 2;
                                             int sysPowMode = (int) (bit64 & 0x03);//整车电源档位
@@ -839,7 +964,10 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x08FF01DD) {//peps
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("peps[0x08FF01DD]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("peps[0x08FF01DD]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("peps[0x08FF01DD]--->" +
+                                                    ByteBufUtil.hexDump(canBufferAll));
                                             int fobPosition = (byte) (bit64 & 0x07);//钥匙位置
                                             peps.setFobPosition(fobPosition);
                                             bit64 = bit64 >> 3;
@@ -894,7 +1022,12 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1CFF00DE) {//HVAC_General_MSG
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil
+                                                            .hexDump(canBufferAll));
                                             int runstatus = (int) (bit64 & 0x03);//空调启动状态
                                             hvac.setRunStatus(runstatus);
                                             bit64 = bit64 >>> 2;
@@ -905,10 +1038,10 @@ public class DataParserD2s implements IDataParser {
                                             int power = (int) (bit64 & 0xFFFF);//空调功率
                                             hvac.setPower(power);
                                             bit64 = bit64 >>> 16;
-                                            int exTemp = (int) (bit64 & 0xFF - 40);//车外温度
+                                            int exTemp = (int) (bit64 & 0xFF) - 40;//车外温度
                                             hvac.setExTemp(exTemp);
                                             bit64 = bit64 >>> 8;
-                                            int innerTemp = (int) (bit64 & 0xFF - 40);//车内温度
+                                            int innerTemp = (int) (bit64 & 0xFF) - 40;//车内温度
                                             hvac.setInnerTemp(innerTemp);
                                             bit64 = bit64 >>> 8;
                                             int crondDirection = (int) (bit64 & 0x07);//空调风向状态
@@ -919,7 +1052,9 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1CFF01DE) {//HVAC_FaultList_MSG
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("HVAC_FaultList_MSG[0x1CFF01DE]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("HVAC_FaultList_MSG[0x1CFF01DE]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
                                             int errModel = 0;//模式电机故障
                                             if ((bit64 & 0x01) == 0x00) {
                                                 errModel = 0x00;
@@ -954,22 +1089,28 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1CFF00DA) {//icu
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("icu[0x1CFF00DA]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("icu[0x1CFF00DA]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             float mileAge = (bit64 & 0xFFFFFF) * 0.1f;
                                             BigDecimal bigDecimal = new BigDecimal(mileAge); //总里程
-                                            mileAge = bigDecimal.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            mileAge = bigDecimal.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             bit64 = bit64 >>> 32;
                                             int brakeSysAlarm = (int) (bit64 & 0x01); //制动系统报警
                                             bit64 = bit64 >>> 1;
                                             int keepInfo = (int) (bit64 & 0x03);
                                             bit64 = bit64 >>> 2;
+                                            bit64 = bit64 >>> 5;
                                             float leaveMileAge = (bit64 & 0xFFFF) * 0.1f;
-                                            BigDecimal bigDecimal1 = new BigDecimal(mileAge); //里程
-                                            leaveMileAge = bigDecimal1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            BigDecimal bigDecimal1 = new BigDecimal(leaveMileAge)
+                                                    ; //里程
+                                            leaveMileAge = bigDecimal1.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                         } else if (canId == (int) 0x0CFF00DC) {//bcm BCM_General
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BCM_General[0x0CFF00DC]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("BCM_General[0x0CFF00DC]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             Integer runStatus = (int) (bit64 & 0x0F);//BCM运行状态（阶段）
                                             bcm.setRunStatus(runStatus);
 
@@ -986,18 +1127,21 @@ public class DataParserD2s implements IDataParser {
                                             bcm.setHandbrakeStatus(handbrakeStatus);
 
                                             bit64 = bit64 >> 1;
-                                            int iscrash = (int) (bit64 & 0x01);//碰撞是否发生bit64 = bit64 >> 1;
+                                            int iscrash = (int) (bit64 & 0x01);//碰撞是否发生bit64 =
+                                            // bit64 >> 1;
                                             bcm.setIscrash(iscrash);
 
-                                            bit64 = bit64 >> 1;
+                                            bit64 = bit64 >> 2;
                                             int dc12level = (int) (bit64 & 0x0F);//12V电源档位
                                             bcm.setDc12Level(dc12level);
 
                                             bit64 = bit64 >> 4;
                                             bit64 = bit64 >> 1;
-                                            float dc12voltage = ((float) (bit64 & 0xFF)) * 0.1f;//12V蓄电池电压
+                                            float dc12voltage = ((float) (bit64 & 0xFF)) * 0.1f;
+                                            //12V蓄电池电压
                                             BigDecimal bigDecimal = new BigDecimal(dc12voltage);
-                                            dc12voltage = bigDecimal.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            dc12voltage = bigDecimal.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             bcm.setDc12Voltage(dc12voltage);
 
                                             bit64 = bit64 >> 8;
@@ -1009,13 +1153,15 @@ public class DataParserD2s implements IDataParser {
                                             bcm.setLeftWinOutStatus(leftWinOutStatus);
 
                                             bit64 = bit64 >> 2;
-                                            int rightWinOutStatus = (int) (bit64 & 0x03);//右前玻璃升降输出状态
+                                            int rightWinOutStatus = (int) (bit64 & 0x03);
+                                            //右前玻璃升降输出状态
                                             bcm.setRightWinOutStatus(rightWinOutStatus);
 
                                         } else if (canId == (int) 0x0CFF01DC) {//bcm BCM_SysSt
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BCM_SysSt[0x0CFF01DC]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("BCM_SysSt[0x0CFF01DC]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int backWinIsHeat = (int) (bit64 & 0x01);//后挡风玻璃加热是否开
                                             bcm.setBackWinIsHeat(backWinIsHeat);
 
@@ -1023,7 +1169,7 @@ public class DataParserD2s implements IDataParser {
                                             int leftWinStatus = (byte) (bit64 & 0x01);//左窗状态
                                             bcm.setLeftWinStatus(leftWinStatus);
                                             bit64 = bit64 >>> 1;
-                                            int rightWinStatus = (byte) (bit64 & 0x01);//右窗错误
+                                            int rightWinStatus = (byte) (bit64 & 0x01);//右窗状态
                                             bcm.setRightWinStatus(rightWinStatus);
                                             bit64 = bit64 >>> 1;
                                             //reserve
@@ -1064,20 +1210,23 @@ public class DataParserD2s implements IDataParser {
                                             // reserve
                                             bit64 = bit64 >>> 1;
                                             int isReverseLightOn = (byte) (bit64 & 0x01);//倒车灯是否开
-                                            bcm.setIsReadLightOn(isReverseLightOn);
+                                            bcm.setIsReverseLightOn(isReverseLightOn);
                                             bit64 = bit64 >>> 1;
                                             int alarmStatus = (int) (bit64 & 0x07);//防盗报警状态指示
                                             bcm.setAlarmStatus(alarmStatus);
                                             bit64 = bit64 >>> 3;
                                             // reserve
                                             bit64 = bit64 >>> 1;
-                                            int backDoorLockStatus = (byte) (bit64 & 0x01);//后背门锁是否锁止
+                                            int backDoorLockStatus = (byte) (bit64 & 0x01);
+                                            //后背门锁是否锁止
                                             bcm.setBackDoorLockStatus(backDoorLockStatus);
                                             bit64 = bit64 >>> 1;
-                                            int leftDoorLockStatus = (byte) (bit64 & 0x01);//左前门门锁是否锁止
+                                            int leftDoorLockStatus = (byte) (bit64 & 0x01);
+                                            //左前门门锁是否锁止
                                             bcm.setLeftDoorLockStatus(leftDoorLockStatus);
                                             bit64 = bit64 >>> 1;
-                                            int rightDoorLockStatus = (byte) (bit64 & 0x01);//右前门门锁是否锁止
+                                            int rightDoorLockStatus = (byte) (bit64 & 0x01);
+                                            //右前门门锁是否锁止
                                             bcm.setRightDoorLockStatus(rightDoorLockStatus);
                                             bit64 = bit64 >>> 1;
                                             int bcmArmstatus = (byte) (bit64 & 0x01);//
@@ -1119,7 +1268,8 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >>> 1;
                                             // reserved
                                             bit64 = bit64 >>> 8;
-                                            int isKeyVoltageLow = (byte) (bit64 & 0x01);//遥控钥匙电池电量是否低(PEPS指令)
+                                            int isKeyVoltageLow = (byte) (bit64 & 0x01);
+                                            //遥控钥匙电池电量是否低(PEPS指令)
                                             bcm.setIsKeyVoltageLow(isKeyVoltageLow);
                                             bit64 = bit64 >>> 1;
                                             int inbrakeStatus = (int) (bit64 & 0x07);//非法入侵状况
@@ -1128,7 +1278,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C00501) {//VMS_Info2
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("VMS_Info2[0x18C00501]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("VMS_Info2[0x18C00501]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             bit64 = bit64 >> 16;
                                             int motorStatus = (int) (bit64 & 0x03);//电机当前状态
                                             vms.setMotorStatus(motorStatus);
@@ -1136,10 +1287,13 @@ public class DataParserD2s implements IDataParser {
                                             int isMotorTempHigh = (int) (bit64 & 0x01);//电机温度是否过高
                                             vms.setIsMotorTempHigh(isMotorTempHigh);
                                             bit64 = bit64 >> 1;
-                                            int isMotorControlerTempHigh = (int) (bit64 & 0x01);//电机控制器温度是否过高
-                                            vms.setIsMotorControlerTempHigh(isMotorControlerTempHigh);
+                                            int isMotorControlerTempHigh = (int) (bit64 & 0x01);
+                                            //电机控制器温度是否过高
+                                            vms.setIsMotorControlerTempHigh
+                                                    (isMotorControlerTempHigh);
                                             bit64 = bit64 >> 1;
-                                            int isMotorControlerErr = (int) (bit64 & 0x01);//电机控制器是否故障
+                                            int isMotorControlerErr = (int) (bit64 & 0x01);
+                                            //电机控制器是否故障
                                             vms.setIsMotorControlerErr(isMotorControlerErr);
                                             bit64 = bit64 >> 1;
                                             int outAlarmInfo = (int) (bit64 & 0x03);//动力输出报警指示
@@ -1147,14 +1301,19 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C00301) {//VMS_Msg1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("VMS_Msg1[0x18C00301]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float batteryGroupCurrent = ((float) (bit64 & 0xFFFF) / 10.0f) - 350.0f;//电池组电流
-                                            BigDecimal bigDecimal = new BigDecimal(batteryGroupCurrent);
-                                            batteryGroupCurrent = bigDecimal.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("VMS_Msg1[0x18C00301]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float batteryGroupCurrent = ((float) (bit64 & 0xFFFF)
+                                                    / 10.0f) - 350.0f;//电池组电流
+                                            BigDecimal bigDecimal = new BigDecimal
+                                                    (batteryGroupCurrent);
+                                            batteryGroupCurrent = bigDecimal.setScale(1,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             vms.setBatteryGroupCurrent(batteryGroupCurrent);
 
                                             bit64 = bit64 >>> 16;
-                                            float batteryGroupVoltage = (float) (bit64 & 0xFF);//电池组电压
+                                            float batteryGroupVoltage = (float) (bit64 & 0xFF);
+                                            //电池组电压
                                             vms.setBatteryGroupVoltage(batteryGroupVoltage);
                                             bit64 = bit64 >>> 8;
                                             int leaveBattery = (int) (bit64 & 0xFF);//剩余电量
@@ -1162,7 +1321,8 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >>> 8;
                                             float speed = (float) (bit64 & 0xFF) * 0.5f;//车速
                                             BigDecimal bigDecimal1 = new BigDecimal(speed);
-                                            speed = bigDecimal1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            speed = bigDecimal1.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             vms.setSpeed(speed);
                                             bit64 = bit64 >>> 8;
                                             int motorSysTemp = (int) (bit64 & 0xFF) - 40;//电机系统温度
@@ -1188,7 +1348,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x0CF10501) {//
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("[0x0CF10501]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("[0x0CF10501]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int workType = (int) (bit64 & 0x03);
                                             vms.setWorkType(workType);
                                             bit64 = bit64 >>> 2;
@@ -1230,31 +1391,38 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18FF00E0) {//eps EPS_Function
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("EPS_Function[0x18FF00E0]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("EPS_Function[0x18FF00E0]--->"
+                                                    + ByteBufUtil.hexDump(canBuffer));
                                             int errLevel = (int) (bit64 & 0xFF); //EPS 故障等级
                                             eps.setErrLevel(errLevel);
                                             bit64 = bit64 >> 8;
                                             int isWork = (int) (bit64 & 0xFF);//EPS 工作状态
                                             eps.setIsWork(isWork);
                                             bit64 = bit64 >> 8;
-                                            float helpMoment = (float) ((bit64 & 0xFFFF)) * 0.1f - 25.0f;//EPS 助力力矩
+                                            float helpMoment = (float) ((bit64 & 0xFFFF)) * 0.1f
+                                                    - 25.0f;//EPS 助力力矩
                                             BigDecimal b1 = new BigDecimal(helpMoment);
-                                            helpMoment = b1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            helpMoment = b1.setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             eps.setHelpMoment(helpMoment);
                                             bit64 = bit64 >> 16;
-                                            float electricity = (float) (bit64 & 0xFFFF) * 0.1f;//EPS 电机工作电流
+                                            float electricity = (float) (bit64 & 0xFFFF) * 0.1f;
+                                            //EPS 电机工作电流
                                             BigDecimal b2 = new BigDecimal(electricity);
-                                            electricity = b2.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            electricity = b2.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             eps.setElectricity(electricity);
                                             bit64 = bit64 >> 16;
                                             float voltage = (float) (bit64 & 0xFF) * 0.1f;//电源电压
                                             BigDecimal b3 = new BigDecimal(voltage);
-                                            voltage = b3.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            voltage = b3.setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             eps.setVoltage(voltage);
                                         } else if (canId == (int) 0x18FF01E0) {//eps EPS_Error
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("EPS_Error[0x18FF01E0]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("EPS_Error[0x18FF01E0]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int isSensorErr = (int) (bit64 & 0x01);//EPS传感器故障
                                             eps.setIsSensorErr(isSensorErr);
                                             bit64 = bit64 >>> 1;
@@ -1285,7 +1453,8 @@ public class DataParserD2s implements IDataParser {
                                             int canEcuErr = (byte) (bit64 & 0x01);//CAN控制器故障
                                             eps.setIsCanCtrlErr(canEcuErr);
                                             bit64 = bit64 >>> 1;
-                                            int vspeedSignalEnable = (byte) (bit64 & 0x01);//钥匙位置或车速信号失效
+                                            int vspeedSignalEnable = (byte) (bit64 & 0x01);
+                                            //钥匙位置或车速信号失效
                                             eps.setIsKeyInvalid(vspeedSignalEnable);
                                             bit64 = bit64 >>> 1;
                                             int tempSensorLower = (byte) (bit64 & 0x01);//温度传感器超下限
@@ -1296,7 +1465,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x04FF00C8) {//acu ACU_SysSt
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("ACU_SysSt[0x04FF00C8]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("ACU_SysSt[0x04FF00C8]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             bit64 = bit64 >>> 8;
                                             int isCrash = (int) (bit64 & 0x01);//碰撞状态
                                             bit64 = bit64 >>> 1;
@@ -1307,7 +1477,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x10FF01DF) {//adas ADAS_Msg1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("ADAS_Msg1[0x10FF01DF]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("ADAS_Msg1[0x10FF01DF]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int leftLaneDetected = (int) (bit64 & 0x01);//左车道检测
                                             adas.setLeftLaneDetected(leftLaneDetected);
                                             bit64 = bit64 >> 1;
@@ -1338,17 +1509,21 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C0EFF4) {//BMS_GPRS_msg1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_GPRS_msg1[0x18C0EFF4]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("BMS_GPRS_msg1[0x18C0EFF4]--->"
+                                                    + ByteBufUtil.hexDump(canBuffer));
                                             float totalVoltage = (float) (bit64 & 0xFFFF);//总电压
                                             bms.setTotalVoltage(totalVoltage);
                                             bit64 = bit64 >>> 16;
-                                            float totalCurrent = (float) (bit64 & 0xFFFF) * 0.1f - 350.0f;
+                                            float totalCurrent = (float) (bit64 & 0xFFFF) * 0.1f
+                                                    - 350.0f;
                                             BigDecimal b1 = new BigDecimal(totalCurrent);
-                                            totalCurrent = b1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();//总电流
+                                            totalCurrent = b1.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();//总电流
                                             bms.setTotalCurrent(totalCurrent);
 
                                             bit64 = bit64 >>> 16;
-                                            int isChargerConnected = (int) (bit64 & 0x01);//外接充电线连接状态
+                                            int isChargerConnected = (int) (bit64 & 0x01);
+                                            //外接充电线连接状态
                                             bms.setIsChargerConnected(isChargerConnected);
                                             bit64 = bit64 >>> 1;
                                             int cpSignal = (int) (bit64 & 0x01);//cp信号
@@ -1363,7 +1538,8 @@ public class DataParserD2s implements IDataParser {
                                             int isConnectCharger = (int) (bit64 & 0x01);//与充电机通讯状态
                                             bms.setIsConnectCharger(isConnectCharger);
                                             bit64 = bit64 >>> 1;
-                                            int isBatteryGroupBalance = (int) (bit64 & 0x01);//电池包均衡状态
+                                            int isBatteryGroupBalance = (int) (bit64 & 0x01);
+                                            //电池包均衡状态
                                             bms.setIsBatteryGroupBalance(isBatteryGroupBalance);
                                             bit64 = bit64 >>> 1;
                                             int fanStatus = (int) (bit64 & 0x01);//
@@ -1394,10 +1570,13 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C0EEF4) { //BmsMsg2
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BmsMsg2[0x18C0EEF4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltageHighest = (float) ((bit64 & 0xFFFF) * 0.001f);
+                                            D2sDataPackUtil.debug("BmsMsg2[0x18C0EEF4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltageHighest = (float) ((bit64 & 0xFFFF) *
+                                                    0.001f);
                                             BigDecimal b1 = new BigDecimal(voltageHighest);
-                                            voltageHighest = b1.setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();//最高单体电压
+                                            voltageHighest = b1.setScale(3, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();//最高单体电压
                                             bms.setVoltageHighest(voltageHighest);
                                             bit64 = bit64 >> 16;
 
@@ -1405,9 +1584,11 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >> 8;
                                             bms.setVoltageHighestNo(voltageHighestNo);
 
-                                            float voltageLowest = (float) ((bit64 & 0xFFFF) * 0.001f);//最低单体电压
+                                            float voltageLowest = (float) ((bit64 & 0xFFFF) *
+                                                    0.001f);//最低单体电压
                                             BigDecimal b2 = new BigDecimal(voltageLowest);
-                                            voltageLowest = b1.setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            voltageLowest = b1.setScale(3, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             bms.setVoltageLowest(voltageLowest);
 
                                             bit64 = bit64 >> 16;
@@ -1424,254 +1605,368 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x10C000F4) {//单体电压-start-1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x10C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage1 = (float) ((bit64 & 0x1FF) * 0.01f);//1#单体电池电压
-                                            voltage1 = BigDecimal.valueOf(voltage1).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x10C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage1 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //1#单体电池电压
+                                            voltage1 = BigDecimal.valueOf(voltage1).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[0] = voltage1;
                                             bit64 = bit64 >> 9;
-                                            float voltage2 = (float) ((bit64 & 0x1FF) * 0.01f);//2#单体电池电压
-                                            voltage2 = BigDecimal.valueOf(voltage2).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage2 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //2#单体电池电压
+                                            voltage2 = BigDecimal.valueOf(voltage2).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[1] = voltage2;
                                             bit64 = bit64 >> 9;
-                                            float voltage3 = (float) ((bit64 & 0x1FF) * 0.01f);//3#单体电池电压
-                                            voltage3 = BigDecimal.valueOf(voltage3).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage3 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //3#单体电池电压
+                                            voltage3 = BigDecimal.valueOf(voltage3).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[2] = voltage3;
                                             bit64 = bit64 >> 9;
-                                            float voltage4 = (float) ((bit64 & 0x1FF) * 0.01f);//4#单体电池电压
-                                            voltage4 = BigDecimal.valueOf(voltage4).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage4 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //4#单体电池电压
+                                            voltage4 = BigDecimal.valueOf(voltage4).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[3] = voltage4;
                                             bit64 = bit64 >> 9;
-                                            float voltage5 = (float) ((bit64 & 0x1FF) * 0.01f);//5#单体电池电压
-                                            voltage5 = BigDecimal.valueOf(voltage5).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage5 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //5#单体电池电压
+                                            voltage5 = BigDecimal.valueOf(voltage5).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[4] = voltage5;
                                             bit64 = bit64 >> 9;
-                                            float voltage6 = (float) ((bit64 & 0x1FF) * 0.01f);//6#单体电池电压
-                                            voltage6 = BigDecimal.valueOf(voltage6).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage6 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //6#单体电池电压
+                                            voltage6 = BigDecimal.valueOf(voltage6).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[5] = voltage6;
                                             bit64 = bit64 >> 9;
-                                            float voltage7 = (float) ((bit64 & 0x1FF) * 0.01f);//7#单体电池电压
-                                            voltage7 = BigDecimal.valueOf(voltage7).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage7 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //7#单体电池电压
+                                            voltage7 = BigDecimal.valueOf(voltage7).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[6] = voltage7;
                                         } else if (canId == (int) 0x14C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x14C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage8 = (float) ((bit64 & 0x1FF) * 0.01f);//8#单体电池电压
-                                            voltage8 = BigDecimal.valueOf(voltage8).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x14C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage8 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //8#单体电池电压
+                                            voltage8 = BigDecimal.valueOf(voltage8).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[7] = voltage8;
                                             bit64 = bit64 >> 9;
-                                            float voltage9 = (float) ((bit64 & 0x1FF) * 0.01f);//9#单体电池电压
-                                            voltage9 = BigDecimal.valueOf(voltage9).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage9 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //9#单体电池电压
+                                            voltage9 = BigDecimal.valueOf(voltage9).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[8] = voltage9;
                                             bit64 = bit64 >> 9;
-                                            float voltage10 = (float) ((bit64 & 0x1FF) * 0.01f);//10#单体电池电压
-                                            voltage10 = BigDecimal.valueOf(voltage10).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage10 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //10#单体电池电压
+                                            voltage10 = BigDecimal.valueOf(voltage10).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[9] = voltage10;
                                             bit64 = bit64 >> 9;
-                                            float voltage11 = (float) ((bit64 & 0x1FF) * 0.01f);//11#单体电池电压
-                                            voltage11 = BigDecimal.valueOf(voltage11).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage11 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //11#单体电池电压
+                                            voltage11 = BigDecimal.valueOf(voltage11).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[10] = voltage11;
                                             bit64 = bit64 >> 9;
-                                            float voltage12 = (float) ((bit64 & 0x1FF) * 0.01f);//12#单体电池电压
-                                            voltage12 = BigDecimal.valueOf(voltage12).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage12 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //12#单体电池电压
+                                            voltage12 = BigDecimal.valueOf(voltage12).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[11] = voltage12;
                                             bit64 = bit64 >> 9;
-                                            float voltage13 = (float) ((bit64 & 0x1FF) * 0.01f);//13#单体电池电压
-                                            voltage13 = BigDecimal.valueOf(voltage13).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage13 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //13#单体电池电压
+                                            voltage13 = BigDecimal.valueOf(voltage13).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[12] = voltage13;
                                             bit64 = bit64 >> 9;
-                                            float voltage14 = (float) ((bit64 & 0x1FF) * 0.01f);//14#单体电池电压
-                                            voltage14 = BigDecimal.valueOf(voltage14).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage14 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //14#单体电池电压
+                                            voltage14 = BigDecimal.valueOf(voltage14).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[13] = voltage14;
                                         } else if (canId == (int) 0x18C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x18C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage15 = (float) ((bit64 & 0x1FF) * 0.01f);//15#单体电池电压
-                                            voltage15 = BigDecimal.valueOf(voltage15).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x18C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage15 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //15#单体电池电压
+                                            voltage15 = BigDecimal.valueOf(voltage15).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[14] = voltage15;
                                             bit64 = bit64 >> 9;
-                                            float voltage16 = (float) ((bit64 & 0x1FF) * 0.01f);//16#单体电池电压
-                                            voltage16 = BigDecimal.valueOf(voltage16).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage16 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //16#单体电池电压
+                                            voltage16 = BigDecimal.valueOf(voltage16).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[15] = voltage16;
                                             bit64 = bit64 >> 9;
-                                            float voltage17 = (float) ((bit64 & 0x1FF) * 0.01f);//17#单体电池电压
-                                            voltage17 = BigDecimal.valueOf(voltage17).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage17 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //17#单体电池电压
+                                            voltage17 = BigDecimal.valueOf(voltage17).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[16] = voltage17;
                                             bit64 = bit64 >> 9;
-                                            float voltage18 = (float) ((bit64 & 0x1FF) * 0.01f);//18#单体电池电压
-                                            voltage18 = BigDecimal.valueOf(voltage18).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage18 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //18#单体电池电压
+                                            voltage18 = BigDecimal.valueOf(voltage18).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[17] = voltage18;
                                             bit64 = bit64 >> 9;
-                                            float voltage19 = (float) ((bit64 & 0x1FF) * 0.01f);//19#单体电池电压
-                                            voltage19 = BigDecimal.valueOf(voltage19).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage19 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //19#单体电池电压
+                                            voltage19 = BigDecimal.valueOf(voltage19).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[18] = voltage19;
                                             bit64 = bit64 >> 9;
-                                            float voltage20 = (float) ((bit64 & 0x1FF) * 0.01f);//20#单体电池电压
-                                            voltage20 = BigDecimal.valueOf(voltage20).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage20 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //20#单体电池电压
+                                            voltage20 = BigDecimal.valueOf(voltage20).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[19] = voltage20;
                                             bit64 = bit64 >> 9;
-                                            float voltage21 = (float) ((bit64 & 0x1FF) * 0.01f);//21#单体电池电压
-                                            voltage21 = BigDecimal.valueOf(voltage21).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage21 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //21#单体电池电压
+                                            voltage21 = BigDecimal.valueOf(voltage21).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[20] = voltage21;
                                         } else if (canId == (int) 0x1CC000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x1CC000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage22 = (float) ((bit64 & 0x1FF) * 0.01f);//22#单体电池电压
-                                            voltage22 = BigDecimal.valueOf(voltage22).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x1CC000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage22 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //22#单体电池电压
+                                            voltage22 = BigDecimal.valueOf(voltage22).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[21] = voltage22;
                                             bit64 = bit64 >> 9;
-                                            float voltage23 = (float) ((bit64 & 0x1FF) * 0.01f);//23#单体电池电压
-                                            voltage23 = BigDecimal.valueOf(voltage23).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage23 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //23#单体电池电压
+                                            voltage23 = BigDecimal.valueOf(voltage23).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[22] = voltage23;
                                             bit64 = bit64 >> 9;
-                                            float voltage24 = (float) ((bit64 & 0x1FF) * 0.01f);//24#单体电池电压
-                                            voltage24 = BigDecimal.valueOf(voltage24).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage24 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //24#单体电池电压
+                                            voltage24 = BigDecimal.valueOf(voltage24).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[23] = voltage24;
                                             bit64 = bit64 >> 9;
-                                            float voltage25 = (float) ((bit64 & 0x1FF) * 0.01f);//25#单体电池电压
-                                            voltage25 = BigDecimal.valueOf(voltage25).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage25 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //25#单体电池电压
+                                            voltage25 = BigDecimal.valueOf(voltage25).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[24] = voltage25;
                                             bit64 = bit64 >> 9;
-                                            float voltage26 = (float) ((bit64 & 0x1FF) * 0.01f);//26#单体电池电压
-                                            voltage26 = BigDecimal.valueOf(voltage26).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage26 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //26#单体电池电压
+                                            voltage26 = BigDecimal.valueOf(voltage26).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[25] = voltage26;
                                             bit64 = bit64 >> 9;
-                                            float voltage27 = (float) ((bit64 & 0x1FF) * 0.01f);//27#单体电池电压
-                                            voltage27 = BigDecimal.valueOf(voltage27).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage27 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //27#单体电池电压
+                                            voltage27 = BigDecimal.valueOf(voltage27).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[26] = voltage27;
                                             bit64 = bit64 >> 9;
-                                            float voltage28 = (float) ((bit64 & 0x1FF) * 0.01f);//28#单体电池电压
-                                            voltage28 = BigDecimal.valueOf(voltage28).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage28 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //28#单体电池电压
+                                            voltage28 = BigDecimal.valueOf(voltage28).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[27] = voltage28;
                                         } else if (canId == (int) 0x1CC007F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x1CC007F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage29 = (float) ((bit64 & 0x1FF) * 0.01f);//29#单体电池电压
-                                            voltage29 = BigDecimal.valueOf(voltage29).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x1CC007F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage29 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //29#单体电池电压
+                                            voltage29 = BigDecimal.valueOf(voltage29).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[28] = voltage29;
                                             bit64 = bit64 >> 9;
-                                            float voltage30 = (float) ((bit64 & 0x1FF) * 0.01f);//30#单体电池电压
-                                            voltage30 = BigDecimal.valueOf(voltage30).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage30 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //30#单体电池电压
+                                            voltage30 = BigDecimal.valueOf(voltage30).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[29] = voltage30;
                                             bit64 = bit64 >> 9;
-                                            float voltage31 = (float) ((bit64 & 0x1FF) * 0.01f);//31#单体电池电压
-                                            voltage31 = BigDecimal.valueOf(voltage31).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage31 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //31#单体电池电压
+                                            voltage31 = BigDecimal.valueOf(voltage31).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[30] = voltage31;
                                             bit64 = bit64 >> 9;
-                                            float voltage32 = (float) ((bit64 & 0x1FF) * 0.01f);//32#单体电池电压
-                                            voltage32 = BigDecimal.valueOf(voltage32).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage32 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //32#单体电池电压
+                                            voltage32 = BigDecimal.valueOf(voltage32).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[31] = voltage32;
                                             bit64 = bit64 >> 9;
-                                            float voltage33 = (float) ((bit64 & 0x1FF) * 0.01f);//33#单体电池电压
-                                            voltage33 = BigDecimal.valueOf(voltage33).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage33 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //33#单体电池电压
+                                            voltage33 = BigDecimal.valueOf(voltage33).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[32] = voltage33;
                                             bit64 = bit64 >> 9;
-                                            float voltage34 = (float) ((bit64 & 0x1FF) * 0.01f);//34#单体电池电压
-                                            voltage34 = BigDecimal.valueOf(voltage34).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage34 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //34#单体电池电压
+                                            voltage34 = BigDecimal.valueOf(voltage34).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[33] = voltage34;
                                             bit64 = bit64 >> 9;
-                                            float voltage35 = (float) ((bit64 & 0x1FF) * 0.01f);//35#单体电池电压
-                                            voltage35 = BigDecimal.valueOf(voltage35).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage35 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //35#单体电池电压
+                                            voltage35 = BigDecimal.valueOf(voltage35).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[34] = voltage35;
                                         } else if (canId == (int) 0x1CC008F4) {//单体电压-end-6
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x1CC008F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage36 = (float) ((bit64 & 0x1FF) * 0.01f);//36#单体电池电压
-                                            voltage36 = BigDecimal.valueOf(voltage36).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x1CC008F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage36 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //36#单体电池电压
+                                            voltage36 = BigDecimal.valueOf(voltage36).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[35] = voltage36;
                                             bit64 = bit64 >> 9;
-                                            float voltage37 = (float) ((bit64 & 0x1FF) * 0.01f);//37#单体电池电压
-                                            voltage37 = BigDecimal.valueOf(voltage37).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage37 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //37#单体电池电压
+                                            voltage37 = BigDecimal.valueOf(voltage37).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[36] = voltage37;
                                             bit64 = bit64 >> 9;
-                                            float voltage38 = (float) ((bit64 & 0x1FF) * 0.01f);//38#单体电池电压
-                                            voltage38 = BigDecimal.valueOf(voltage38).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage38 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //38#单体电池电压
+                                            voltage38 = BigDecimal.valueOf(voltage38).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[37] = voltage38;
                                             bit64 = bit64 >> 9;
-                                            float voltage39 = (float) ((bit64 & 0x1FF) * 0.01f);//39#单体电池电压
-                                            voltage39 = BigDecimal.valueOf(voltage39).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage39 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //39#单体电池电压
+                                            voltage39 = BigDecimal.valueOf(voltage39).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[38] = voltage39;
                                             bit64 = bit64 >> 9;
-                                            float voltage40 = (float) ((bit64 & 0x1FF) * 0.01f);//40#单体电池电压
-                                            voltage40 = BigDecimal.valueOf(voltage40).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage40 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //40#单体电池电压
+                                            voltage40 = BigDecimal.valueOf(voltage40).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[39] = voltage40;
                                             bit64 = bit64 >> 9;
-                                            float voltage41 = (float) ((bit64 & 0x1FF) * 0.01f);//41#单体电池电压
-                                            voltage41 = BigDecimal.valueOf(voltage41).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage41 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //41#单体电池电压
+                                            voltage41 = BigDecimal.valueOf(voltage41).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[40] = voltage41;
                                             bit64 = bit64 >> 9;
-                                            float voltage42 = (float) ((bit64 & 0x1FF) * 0.01f);//42#单体电池电压
-                                            voltage42 = BigDecimal.valueOf(voltage42).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage42 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //42#单体电池电压
+                                            voltage42 = BigDecimal.valueOf(voltage42).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[41] = voltage42;
                                         } else if (canId == (int) 0x18FF05F4) {//BMS_Error
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_Error[0x18FF05F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int sellVoltageHighestChargerL4 = (int) (bit64 & 0x01);//单体电压超高-充电-4级
-                                            bms.setSellVolHighestChargerl4(sellVoltageHighestChargerL4);
+                                            D2sDataPackUtil.debug("BMS_Error[0x18FF05F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            int sellVoltageHighestChargerL4 = (int) (bit64 &
+                                                    0x01);//单体电压超高-充电-4级
+                                            bms.setSellVolHighestChargerl4
+                                                    (sellVoltageHighestChargerL4);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageHighestFbL3 = (int) (bit64 & 0x01);//单体电压超高-回馈-3级
+                                            int sellVoltageHighestFbL3 = (int) (bit64 & 0x01);
+                                            //单体电压超高-回馈-3级
                                             bms.setSellVolHighestFbl3(sellVoltageHighestFbL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageHighestL3 = (int) (bit64 & 0x01);//单体电压超高-3级
+                                            int sellVoltageHighestL3 = (int) (bit64 & 0x01);
+                                            //单体电压超高-3级
                                             bms.setSellVolHighestL3(sellVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageHighestChargerL4 = (int) (bit64 & 0x01);//总电压超高-充电-4级
-                                            bms.setTotalVolHighestChargerl4(totalVoltageHighestChargerL4);
+                                            int totalVoltageHighestChargerL4 = (int) (bit64 &
+                                                    0x01);//总电压超高-充电-4级
+                                            bms.setTotalVolHighestChargerl4
+                                                    (totalVoltageHighestChargerL4);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageHighestFbL3 = (int) (bit64 & 0x01);//总电压超高-回馈-3级
+                                            int totalVoltageHighestFbL3 = (int) (bit64 & 0x01);
+                                            //总电压超高-回馈-3级
                                             bms.setTotalVolHighestFbl3(totalVoltageHighestFbL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageHighestL3 = (int) (bit64 & 0x01);//总电压超高-3级
+                                            int totalVoltageHighestL3 = (int) (bit64 & 0x01);
+                                            //总电压超高-3级
                                             bms.setTotalVolHighestl3(totalVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowerL1 = (int) (bit64 & 0x01);//单体电压过低-1级降功率
+                                            int sellVoltageLowerL1 = (int) (bit64 & 0x01);
+                                            //单体电压过低-1级降功率
                                             bms.setSellVolLowerl1(sellVoltageLowerL1);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowerL2 = (int) (bit64 & 0x01);//单体电压过低-2级降功率
+                                            int sellVoltageLowerL2 = (int) (bit64 & 0x01);
+                                            //单体电压过低-2级降功率
                                             bms.setSellVolLowerl2(sellVoltageLowerL2);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowerL3 = (int) (bit64 & 0x01);//单体电压过低-3级降功率
+                                            int sellVoltageLowerL3 = (int) (bit64 & 0x01);
+                                            //单体电压过低-3级降功率
                                             bms.setSellVolLowerl3(sellVoltageLowerL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowerL1 = (int) (bit64 & 0x01);//总电压过低-1级降功率
+                                            int totalVoltageLowerL1 = (int) (bit64 & 0x01);
+                                            //总电压过低-1级降功率
                                             bms.setTotalVolLowerl1(totalVoltageLowerL1);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowerL2 = (int) (bit64 & 0x01);//总电压过低-2级降功率
+                                            int totalVoltageLowerL2 = (int) (bit64 & 0x01);
+                                            //总电压过低-2级降功率
                                             bms.setTotalVolLowerl2(totalVoltageLowerL2);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowerL3 = (int) (bit64 & 0x01);//总电压过低-3级降功率
+                                            int totalVoltageLowerL3 = (int) (bit64 & 0x01);
+                                            //总电压过低-3级降功率
                                             bms.setTotalVolLowerl3(totalVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowestL3 = (int) (bit64 & 0x01);//单体电压超低-3级
+                                            int sellVoltageLowestL3 = (int) (bit64 & 0x01);
+                                            //单体电压超低-3级
                                             bms.setSellVolLowestl3(sellVoltageLowestL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowestL4 = (int) (bit64 & 0x01);//单体电压超低-4级
+                                            int sellVoltageLowestL4 = (int) (bit64 & 0x01);
+                                            //单体电压超低-4级
                                             bms.setSellVolLowestl4(sellVoltageLowestL4);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowestCharger = (int) (bit64 & 0x01);//单体电压超低-充电
+                                            int sellVoltageLowestCharger = (int) (bit64 & 0x01);
+                                            //单体电压超低-充电
                                             bms.setSellVolLowestCharger(sellVoltageLowestCharger);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowestL3 = (int) (bit64 & 0x01);//总电压超低-3级
+                                            int totalVoltageLowestL3 = (int) (bit64 & 0x01);
+                                            //总电压超低-3级
                                             bms.setTotalVolLowerl3(totalVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowestL4 = (int) (bit64 & 0x01);//总电压超低-4级
+                                            int totalVoltageLowestL4 = (int) (bit64 & 0x01);
+                                            //总电压超低-4级
                                             bms.setTotalVolLowestl4(totalVoltageLowestL4);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowestCharger = (int) (bit64 & 0x01);//总电压超低-充电
+                                            int totalVoltageLowestCharger = (int) (bit64 & 0x01);
+                                            //总电压超低-充电
                                             bms.setTotalVolLowestCharger(totalVoltageLowestCharger);
                                             bit64 = bit64 >> 1;
-                                            int voltagePlusBiggerL1 = (int) (bit64 & 0x01);//压差过大-1级降功率
+                                            int voltagePlusBiggerL1 = (int) (bit64 & 0x01);
+                                            //压差过大-1级降功率
                                             bms.setVolPlusBiggerl1(voltagePlusBiggerL1);
                                             bit64 = bit64 >> 1;
-                                            int voltagePlusBiggerL2 = (int) (bit64 & 0x01);//压差过大-2级降功率
+                                            int voltagePlusBiggerL2 = (int) (bit64 & 0x01);
+                                            //压差过大-2级降功率
                                             bms.setVolPlusBiggerl2(voltagePlusBiggerL2);
                                             bit64 = bit64 >> 1;
-                                            int voltagePlusBiggerL3 = (int) (bit64 & 0x01);//压差过大-3级降功率
+                                            int voltagePlusBiggerL3 = (int) (bit64 & 0x01);
+                                            //压差过大-3级降功率
                                             bms.setVolPlusBiggerl3(voltagePlusBiggerL3);
                                             bit64 = bit64 >> 1;
                                             int socLowerL1 = (int) (bit64 & 0x01);//SOC过低-1级降功率
@@ -1683,37 +1978,54 @@ public class DataParserD2s implements IDataParser {
                                             int socLowerL3 = (int) (bit64 & 0x01);//SOC过低-3级降功率
                                             bms.setSocLowerl3(socLowerL3);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggerL1 = (int) (bit64 & 0x01);//放电电流过大-1级降功率
-                                            bms.setDischargerCurrentBiggerl1(dischargerCurrentBiggerL1);
+                                            int dischargerCurrentBiggerL1 = (int) (bit64 & 0x01);
+                                            //放电电流过大-1级降功率
+                                            bms.setDischargerCurrentBiggerl1
+                                                    (dischargerCurrentBiggerL1);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggerL2 = (int) (bit64 & 0x01);//放电电流过大-2级降功率
-                                            bms.setDischargerCurrentBiggerl2(dischargerCurrentBiggerL2);
+                                            int dischargerCurrentBiggerL2 = (int) (bit64 & 0x01);
+                                            //放电电流过大-2级降功率
+                                            bms.setDischargerCurrentBiggerl2
+                                                    (dischargerCurrentBiggerL2);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggerL3 = (int) (bit64 & 0x01);//放电电流过大-3级降功率
-                                            bms.setDischargerCurrentBiggerl3(dischargerCurrentBiggerL3);
+                                            int dischargerCurrentBiggerL3 = (int) (bit64 & 0x01);
+                                            //放电电流过大-3级降功率
+                                            bms.setDischargerCurrentBiggerl3
+                                                    (dischargerCurrentBiggerL3);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01);//放电电流超大-3级
-                                            bms.setDischargerCurrentBiggestl3(dischargerCurrentBiggestL3);
+                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01)
+                                                    ;//放电电流超大-3级
+                                            bms.setDischargerCurrentBiggestl3
+                                                    (dischargerCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
-                                            int chargerCurrentBiggestL3 = (int) (bit64 & 0x01);//充电电流超大-3级
+                                            int chargerCurrentBiggestL3 = (int) (bit64 & 0x01);
+                                            //充电电流超大-3级
                                             bms.setChargerCurrentBiggestl3(chargerCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
-                                            int chargerCurrentBiggestL4 = (int) (bit64 & 0x01);//充电电流超大-4级
+                                            int chargerCurrentBiggestL4 = (int) (bit64 & 0x01);
+                                            //充电电流超大-4级
                                             bms.setChargerCurrentBiggestl4(chargerCurrentBiggestL4);
                                             bit64 = bit64 >> 1;
-                                            int feedBackCurrentBiggestL3 = (int) (bit64 & 0x01);//回馈电流超大-3级
-                                            bms.setFeedbackCurrentBiggestl3(feedBackCurrentBiggestL3);
+                                            int feedBackCurrentBiggestL3 = (int) (bit64 & 0x01);
+                                            //回馈电流超大-3级
+                                            bms.setFeedbackCurrentBiggestl3
+                                                    (feedBackCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
-                                            int feedBackCurrentBiggestL4 = (int) (bit64 & 0x01);//回馈电流超大-4级
-                                            bms.setFeedbackCurrentBiggestl4(feedBackCurrentBiggestL4);
+                                            int feedBackCurrentBiggestL4 = (int) (bit64 & 0x01);
+                                            //回馈电流超大-4级
+                                            bms.setFeedbackCurrentBiggestl4
+                                                    (feedBackCurrentBiggestL4);
                                             bit64 = bit64 >> 1;
-                                            int tempratureHigherL1 = (int) (bit64 & 0x01);//温度过高-1级降功率
+                                            int tempratureHigherL1 = (int) (bit64 & 0x01);
+                                            //温度过高-1级降功率
                                             bms.setTempratureHigherl1(tempratureHigherL1);
                                             bit64 = bit64 >> 1;
-                                            int tempratureHigherL2 = (int) (bit64 & 0x01);//温度过高-2级降功率
+                                            int tempratureHigherL2 = (int) (bit64 & 0x01);
+                                            //温度过高-2级降功率
                                             bms.setTempratureHigherl2(tempratureHigherL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureHigherL3 = (int) (bit64 & 0x01);//温度过高-3级降功率
+                                            int tempratureHigherL3 = (int) (bit64 & 0x01);
+                                            //温度过高-3级降功率
                                             bms.setTempratureHigherl3(tempratureHigherL3);
                                             bit64 = bit64 >> 1;
                                             int tempratureHighestL3 = (int) (bit64 & 0x01);//温度超高-3级
@@ -1722,35 +2034,46 @@ public class DataParserD2s implements IDataParser {
                                             int tempratureHighestL4 = (int) (bit64 & 0x01);//温度超高-4级
                                             bms.setTempratureHighestl4(tempratureHighestL4);
                                             bit64 = bit64 >> 1;
-                                            int heatMoTempratureHighest = (int) (bit64 & 0x01);//加热膜温度超高
+                                            int heatMoTempratureHighest = (int) (bit64 & 0x01);
+                                            //加热膜温度超高
                                             bms.setHeatMoTempratureHighest(heatMoTempratureHighest);
                                             bit64 = bit64 >> 1;
-                                            int tempratureLowerL1 = (int) (bit64 & 0x01);//温度过低-1级降功率
+                                            int tempratureLowerL1 = (int) (bit64 & 0x01);
+                                            //温度过低-1级降功率
                                             bms.setTempLowerl1(tempratureLowerL1);
                                             bit64 = bit64 >> 1;
-                                            int tempratureLowerL2 = (int) (bit64 & 0x01);//温度过低-2级降功率
+                                            int tempratureLowerL2 = (int) (bit64 & 0x01);
+                                            //温度过低-2级降功率
                                             bms.setTempLowerl2(tempratureHigherL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureLowerL3 = (int) (bit64 & 0x01);//温度过低-3级降功率
+                                            int tempratureLowerL3 = (int) (bit64 & 0x01);
+                                            //温度过低-3级降功率
                                             bms.setTempLowerl3(tempratureLowerL3);
                                             bit64 = bit64 >> 1;
                                             int tempratureLowestL3 = (int) (bit64 & 0x01);//温度超低-3级
                                             bms.setTempLowestl3(tempratureHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int tempraturePlusHigherL1 = (int) (bit64 & 0x01);//温差过高-1级降功率
+                                            int tempraturePlusHigherL1 = (int) (bit64 & 0x01);
+                                            //温差过高-1级降功率
                                             bms.setTempPlusHigherl1(tempraturePlusHigherL1);
                                             bit64 = bit64 >> 1;
-                                            int tempraturePlusHigherL2 = (int) (bit64 & 0x01);//温差过高-2级降功率
+                                            int tempraturePlusHigherL2 = (int) (bit64 & 0x01);
+                                            //温差过高-2级降功率
                                             bms.setTempPlusHigherl2(tempraturePlusHigherL2);
                                             bit64 = bit64 >> 1;
-                                            int tempraturePlusHigherL3 = (int) (bit64 & 0x01);//温差过高-3级降功率
+                                            int tempraturePlusHigherL3 = (int) (bit64 & 0x01);
+                                            //温差过高-3级降功率
                                             bms.setTempPlusHigherl3(tempraturePlusHigherL3);
                                             bit64 = bit64 >> 1;
-                                            int tempratureRiseSpeedBiggerL2 = (int) (bit64 & 0x01);//温升速率过高-2级降功率
-                                            bms.setTempRiseSpeedBiggerl2(tempratureRiseSpeedBiggerL2);
+                                            int tempratureRiseSpeedBiggerL2 = (int) (bit64 &
+                                                    0x01);//温升速率过高-2级降功率
+                                            bms.setTempRiseSpeedBiggerl2
+                                                    (tempratureRiseSpeedBiggerL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureRiseSpeedBiggestL4 = (int) (bit64 & 0x01);//温升速率超高-4级
-                                            bms.setTempRiseSpeedBiggestl4(tempratureRiseSpeedBiggestL4);
+                                            int tempratureRiseSpeedBiggestL4 = (int) (bit64 &
+                                                    0x01);//温升速率超高-4级
+                                            bms.setTempRiseSpeedBiggestl4
+                                                    (tempratureRiseSpeedBiggestL4);
                                             bit64 = bit64 >> 1;
                                             int insuLowL1 = (int) (bit64 & 0x01);//绝缘过低-1级
                                             bms.setInsuLowl1(insuLowL1);
@@ -1773,16 +2096,20 @@ public class DataParserD2s implements IDataParser {
                                             int chargerNetErr = (int) (bit64 & 0x01);//与充电机通讯故障
                                             bms.setChargerNetErr(chargerNetErr);
                                             bit64 = bit64 >> 1;
-                                            int voltageDisconnectL4 = (int) (bit64 & 0x01);//电压采集断开-4级
+                                            int voltageDisconnectL4 = (int) (bit64 & 0x01);
+                                            //电压采集断开-4级
                                             bms.setVolDisconnectl4(voltageDisconnectL4);
                                             bit64 = bit64 >> 1;
-                                            int voltageDisconnectL2 = (int) (bit64 & 0x01);//电压采集断开-2级降功率
+                                            int voltageDisconnectL2 = (int) (bit64 & 0x01);
+                                            //电压采集断开-2级降功率
                                             bms.setVolDisconnectl2(voltageDisconnectL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureDisconnectL4 = (int) (bit64 & 0x01);//温度采集断开-4级
+                                            int tempratureDisconnectL4 = (int) (bit64 & 0x01);
+                                            //温度采集断开-4级
                                             bms.setTempDisconnectl4(tempratureDisconnectL4);
                                             bit64 = bit64 >> 1;
-                                            int tempratureDisconnectL2 = (int) (bit64 & 0x01);//温度采集断开-2级降功率
+                                            int tempratureDisconnectL2 = (int) (bit64 & 0x01);
+                                            //温度采集断开-2级降功率
                                             bms.setTempDisconnectl2(tempratureDisconnectL2);
                                             bit64 = bit64 >> 1;
                                             int heatErr = (int) (bit64 & 0x01);//加热故障
@@ -1797,7 +2124,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x04C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("探头温度[0x04C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("探头温度[0x04C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int temprature1 = (int) (bit64 & 0xFF) - 40;//1#探头温度
 
                                             tempratureArray[0] = temprature1;
@@ -1825,7 +2153,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x08C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("探头温度[0x08C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("探头温度[0x08C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int temprature9 = (int) (bit64 & 0xFF) - 40;//9#探头温度
                                             tempratureArray[8] = temprature9;
                                             bit64 = bit64 >>> 8;
@@ -1844,13 +2173,18 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1806E5F4) {//BMS_charger
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_charger[0x1806E5F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float alowableVoltage = (float) ((bit64 & 0xFFFF) * 0.1f);//最高允许充电端电压
-                                            alowableVoltage = BigDecimal.valueOf(alowableVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("BMS_charger[0x1806E5F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float alowableVoltage = (float) ((bit64 & 0xFFFF) *
+                                                    0.1f);//最高允许充电端电压
+                                            alowableVoltage = BigDecimal.valueOf(alowableVoltage)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             bms.setAlowableVoltage(alowableVoltage);
                                             bit64 = bit64 >>> 16;
-                                            float alowableCurrent = (float) ((bit64 & 0xFFFF) * 0.1f);//最高允许充电电流
-                                            alowableCurrent = BigDecimal.valueOf(alowableCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float alowableCurrent = (float) ((bit64 & 0xFFFF) *
+                                                    0.1f);//最高允许充电电流
+                                            alowableCurrent = BigDecimal.valueOf(alowableCurrent)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             bms.setAlowableCurrent(alowableCurrent);
                                             bit64 = bit64 >>> 16;
                                             int isableCharge = (int) (bit64 & 0xFF);//
@@ -1869,39 +2203,51 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18FF01F4) {//BMS_power
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_power[0x18FF01F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int discharge10sPower = (int) (bit64 & 0xFFFF);//动力电池包 10s 最大充电功率
+                                            D2sDataPackUtil.debug("BMS_power[0x18FF01F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            int discharge10sPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包 10s 最大充电功率
                                             bms.setDischarge10SPower(discharge10sPower);
                                             bit64 = bit64 >> 16;
-                                            int discharge30sPower = (int) (bit64 & 0xFFFF);//动力电池包 30s 最大放电功率\
+                                            int discharge30sPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包 30s 最大放电功率\
                                             bms.setDischarge30SPower(discharge30sPower);
                                             bit64 = bit64 >> 16;
-                                            int dischargeMaximumPower = (int) (bit64 & 0xFFFF);//动力电池包持续最大放电功率
+                                            int dischargeMaximumPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包持续最大放电功率
                                             bms.setDischargeMaximumPower(dischargeMaximumPower);
                                             bit64 = bit64 >> 16;
-                                            int dischargeMaximumCurrent = (int) (bit64 & 0xFFFF);//动力电池包最大放电电流限值
+                                            int dischargeMaximumCurrent = (int) (bit64 & 0xFFFF);
+                                            //动力电池包最大放电电流限值
                                             bms.setDischargeMaximumCurrent(dischargeMaximumCurrent);
                                             bit64 = bit64 >> 16;
                                         } else if (canId == (int) 0x18FF02F4) {//BMS_chargerpower
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_chargerpower[0x18FF02F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int charge10sPower = (int) (bit64 & 0xFFFF);//动力电池包 10s 最大充电功率
+                                            D2sDataPackUtil.debug
+                                                    ("BMS_chargerpower[0x18FF02F4]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
+                                            int charge10sPower = (int) (bit64 & 0xFFFF);//动力电池包
+                                            // 10s 最大充电功率
                                             bms.setCharge10SPower(charge10sPower);
                                             bit64 = bit64 >> 16;
-                                            int charge30sPower = (int) (bit64 & 0xFFFF);//动力电池包 30s 最大充电功率
+                                            int charge30sPower = (int) (bit64 & 0xFFFF);//动力电池包
+                                            // 30s 最大充电功率
                                             bms.setCharge30SPower(charge30sPower);
                                             bit64 = bit64 >> 16;
-                                            int chargeMaximumPower = (int) (bit64 & 0xFFFF);//动力电池包持续最大充电功率\
+                                            int chargeMaximumPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包持续最大充电功率\
                                             bms.setChargeMaximumPower(chargeMaximumPower);
                                             bit64 = bit64 >> 16;
-                                            int chargeMaximumCurrent = (int) (bit64 & 0xFFFF) - 350;//动力电池包最大充电电流限值
+                                            int chargeMaximumCurrent = (int) (bit64 & 0xFFFF) -
+                                                    350;//动力电池包最大充电电流限值
                                             bms.setChargeMaximumCurrent(chargeMaximumCurrent);
                                             bit64 = bit64 >> 16;
                                         } else if (canId == (int) 0x0CF11F05) {// MC_VMS1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("MC_VMS1[0x0CF11F05]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("MC_VMS1[0x0CF11F05]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int muStatus = (int) (bit64 & 0x03);//电机控制器状态
                                             mc.setMuStatus(muStatus);
                                             bit64 = bit64 >> 2;
@@ -1914,8 +2260,10 @@ public class DataParserD2s implements IDataParser {
                                             int voltageStatus = (int) (bit64 & 0x03);//母线电压状态
                                             mc.setVoltageStatus(voltageStatus);
                                             bit64 = bit64 >> 2;
-                                            float voltageRange = (float) (bit64 & 0xFF) * 0.5f;//母线电压
-                                            voltageRange = BigDecimal.valueOf(voltageRange).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltageRange = (float) (bit64 & 0xFF) * 0.5f;
+                                            //母线电压
+                                            voltageRange = BigDecimal.valueOf(voltageRange)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             mc.setVoltageRange(voltageRange);
                                             bit64 = bit64 >> 8;
                                             int motorTemprature = (int) (bit64 & 0xFF) - 40;//电机温度
@@ -1927,13 +2275,16 @@ public class DataParserD2s implements IDataParser {
                                             int motorRpm = (int) (bit64 & 0xFFFF);//电机转速
                                             mc.setMotorRpm(motorRpm);
                                             bit64 = bit64 >> 16;
-                                            float motorCurrent = (float) (bit64 & 0xFFFF) * 0.5f;//电机相电流
-                                            motorCurrent = BigDecimal.valueOf(motorCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float motorCurrent = (float) (bit64 & 0xFFFF) * 0.5f;
+                                            //电机相电流
+                                            motorCurrent = BigDecimal.valueOf(motorCurrent)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             mc.setMotorCurrent(motorCurrent);
                                         } else if (canId == (int) 0x0CF12F05) {// MC_Info1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("MC_Info1[0x0CF12F05]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("MC_Info1[0x0CF12F05]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int aprRate = (int) (bit64 & 0xFF);//加速踏板开度
                                             mc.setAprRate(aprRate);
                                             bit64 = bit64 >>> 8;
@@ -1977,23 +2328,28 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x0CF13F05) {//MC_Error
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("MC_Error[0x0CF13F05]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int buscurrentSensorError = (int) (bit64 & 0x01);//母线电流传感器故障
+                                            D2sDataPackUtil.debug("MC_Error[0x0CF13F05]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            int buscurrentSensorError = (int) (bit64 & 0x01);
+                                            //母线电流传感器故障
                                             mc.setBusCurrentSensorError(buscurrentSensorError);
                                             bit64 = bit64 >>> 1;
-                                            int phaseCurrentSensorError = (int) (bit64 & 0x01);//相线电流传感器故障
+                                            int phaseCurrentSensorError = (int) (bit64 & 0x01);
+                                            //相线电流传感器故障
                                             mc.setPhaseCurrentSensorError(phaseCurrentSensorError);
                                             bit64 = bit64 >>> 1;
                                             int busVolSensorError = (int) (bit64 & 0x01);//母线电压传感器故障
                                             mc.setBusVolSensorError(buscurrentSensorError);
                                             bit64 = bit64 >>> 1;
-                                            int controlTempSensorError = (int) (bit64 & 0x01);//控制器温度传感器故障
+                                            int controlTempSensorError = (int) (bit64 & 0x01);
+                                            //控制器温度传感器故障
                                             mc.setControlTempSensorError(controlTempSensorError);
                                             bit64 = bit64 >>> 1;
                                             int mTempSensorError = (int) (bit64 & 0x01);//电机温度传感器故障
                                             mc.setmTempSensorError(mTempSensorError);
                                             bit64 = bit64 >>> 1;
-                                            int rotaryTransformerError = (int) (bit64 & 0x01);//旋转变压器故障
+                                            int rotaryTransformerError = (int) (bit64 & 0x01);
+                                            //旋转变压器故障
                                             mc.setRotaryTransformerError(rotaryTransformerError);
                                             bit64 = bit64 >>> 1;
                                             int controlTempError = (int) (bit64 & 0x01);//控制器温度报警
@@ -2023,7 +2379,8 @@ public class DataParserD2s implements IDataParser {
                                             int busUpdervolError = (int) (bit64 & 0x01);//母线欠压故障
                                             mc.setBusUpdervolError(busUpdervolError);
                                             bit64 = bit64 >>> 1;
-                                            int controlUpdervolError = (int) (bit64 & 0x01);//控制电欠压故障
+                                            int controlUpdervolError = (int) (bit64 & 0x01);
+                                            //控制电欠压故障
                                             mc.setControlUpdervolError(controlUpdervolError);
                                             bit64 = bit64 >>> 1;
                                             int controlOutvolError = (int) (bit64 & 0x01);//控制电过压故障
@@ -2041,10 +2398,12 @@ public class DataParserD2s implements IDataParser {
                                             int perchargeError = (int) (bit64 & 0x01);//预充电故障
                                             mc.setPerchargeError(perchargeError);
                                             bit64 = bit64 >>> 1;
-                                            int pedalPersamplingError = (int) (bit64 & 0x01);//加速踏板预采样故障
+                                            int pedalPersamplingError = (int) (bit64 & 0x01);
+                                            //加速踏板预采样故障
                                             mc.setPedalPersamplingError(pedalPersamplingError);
                                             bit64 = bit64 >>> 1;
-                                            int canCommunicatioonError = (int) (bit64 & 0x01);//CAN总线通讯故障
+                                            int canCommunicatioonError = (int) (bit64 & 0x01);
+                                            //CAN总线通讯故障
                                             mc.setCanCommunicationError(canCommunicatioonError);
                                             bit64 = bit64 >>> 1;
                                             int errorLevel = (int) (bit64 & 0x07);//故障等级
@@ -2057,19 +2416,25 @@ public class DataParserD2s implements IDataParser {
                                             mc.setPowerOutStatus(powerOutStatus);
                                             bit64 = bit64 >>> 2;
                                             bit64 = bit64 >>> 26;
-                                            String supplierCode = Integer.toBinaryString((int) (bit64 & 0xFF));//供应商配置代码
+                                            String supplierCode = Integer.toBinaryString((int)
+                                                    (bit64 & 0xFF));//供应商配置代码
                                             mc.setSupplierCode(supplierCode);
 
                                         } else if (canId == (int) 0x18FF50E5) {//obc CHARGER_BMS
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("CHARGER_BMS[0x18FF50E5]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float outVoltage = (float) ((bit64 & 0xFFFF) * 0.1f);//充电机输出电压
-                                            outVoltage = BigDecimal.valueOf(outVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("CHARGER_BMS[0x18FF50E5]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float outVoltage = (float) ((bit64 & 0xFFFF) * 0.1f);
+                                            //充电机输出电压
+                                            outVoltage = BigDecimal.valueOf(outVoltage).setScale
+                                                    (1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setOutVoltage(outVoltage);
                                             bit64 = bit64 >> 16;
-                                            float outCurrent = (float) ((bit64 & 0xFFFF) * 0.1f);//充电机输出电流
-                                            outCurrent = BigDecimal.valueOf(outCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float outCurrent = (float) ((bit64 & 0xFFFF) * 0.1f);
+                                            //充电机输出电流
+                                            outCurrent = BigDecimal.valueOf(outCurrent).setScale
+                                                    (1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setOutCurrent(outCurrent);
                                             bit64 = bit64 >> 16;
                                             int isHardErr = (int) (bit64 & 0x01);//硬件故障
@@ -2093,11 +2458,13 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             int inputVoltage = (int) (bit64 & 0x01FF);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("ObcSt1[0x18FF51E5]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("ObcSt1[0x18FF51E5]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             obc.setInVoltage((float) inputVoltage);
                                             bit64 = bit64 >> 9;
                                             float inputCurrent = (bit64 & 0x01FF) * 0.1f;
-                                            inputCurrent = BigDecimal.valueOf(inputCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            inputCurrent = BigDecimal.valueOf(inputCurrent)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setInCurrent(inputCurrent);
                                             bit64 = bit64 >> 9;
                                             int pfcVoltage = (int) (bit64 & 0x01FF);
@@ -2106,24 +2473,28 @@ public class DataParserD2s implements IDataParser {
                                             // reserve
                                             bit64 = bit64 >> 5;
                                             float dv12Voltage = (bit64 & 0xFF) * 0.1f;
-                                            dv12Voltage = BigDecimal.valueOf(dv12Voltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            dv12Voltage = BigDecimal.valueOf(dv12Voltage)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setV12Voltage(dv12Voltage);
                                             bit64 = bit64 >> 8;
                                             float dv12Current = (bit64 & 0x3F) * 0.1f;
-                                            dv12Current = BigDecimal.valueOf(dv12Current).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            dv12Current = BigDecimal.valueOf(dv12Current)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setV12Current(dv12Current);
                                             bit64 = bit64 >> 6;
                                             // reserve
                                             bit64 = bit64 >> 2;
                                             float outPowerLevel = (bit64 & 0xFF) * 0.1f;
-                                            outPowerLevel = BigDecimal.valueOf(outPowerLevel).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            outPowerLevel = BigDecimal.valueOf(outPowerLevel)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
 
                                             bit64 = bit64 >> 8;
                                             int outCurrentLevel = (int) (bit64 & 0x3F);
                                         } else if (canId == (int) 0x18FF52E5) {//OBC_St2
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("OBC_St2[0x18FF52E5]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("OBC_St2[0x18FF52E5]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int temp1 = (int) ((bit64 & 0xFF) - 50);//温度1
                                             obc.setTemprature1(temp1);
                                             bit64 = bit64 >>> 8;
@@ -2164,13 +2535,18 @@ public class DataParserD2s implements IDataParser {
                                             int pfcErr = (int) (bit64 & 0x01);//PFC电压异常
                                             obc.setPfcVolError(pfcErr);
                                             bit64 = bit64 >>> 1;
-                                            int charger12DcHighErr = (int) (bit64 & 0x01);//充电机12V过压异常
+                                            int charger12DcHighErr = (int) (bit64 & 0x01);
+                                            //充电机12V过压异常
                                             obc.setV12OutvolError(charger12DcHighErr);
                                             bit64 = bit64 >>> 1;
-                                            int charger12DcLowErr = (int) (bit64 & 0x01);//充电机12V欠压异常
+                                            int charger12DcLowErr = (int) (bit64 & 0x01);
+                                            //充电机12V欠压异常
                                             obc.setV12UpdervolError(charger12DcLowErr);
                                         } else {
-                                            System.out.println("Unsupport packet,canId=" + canId + ",buf=" + ByteBufUtil.hexDump(canBuffer));
+                                            System.out.println("Unsupport packet,canId=" + canId
+                                                    + ",buf=" + ByteBufUtil.hexDump(canBuffer));
+                                            System.out.println("Unsupport packet,canId=" + canId
+                                                    + ",buf=" + ByteBufUtil.hexDump(canBufferAll));
                                         }
                                     }
                                     /*==========add===========*/
@@ -2201,7 +2577,17 @@ public class DataParserD2s implements IDataParser {
                         break;
                     case 0x03://心跳数据
                         System.out.println("## 0x03 - 心跳数据");
-
+                        //读取消息头部24个byte
+                        buffer.readBytes(24);
+                        DataPackHeartbeat dataPackHeartbeat = new DataPackHeartbeat(dataPackObject);
+                        //数据采集时间
+                        byte[] heartbeatBuf = new byte[6];
+                        buffer.readBytes(heartbeatBuf);
+                        //数据采集时间
+                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date
+                                (heartbeatBuf, 0)));
+                        //--add
+                        dataPackTargetList.add(new DataPackTarget(dataPackHeartbeat));
                         break;
                     case 0x04://补发信息上报
                         System.out.println("补发信息上报");
@@ -2214,7 +2600,8 @@ public class DataParserD2s implements IDataParser {
                         byte[] collectTimeBufDelay = new byte[6];
                         buffer.readBytes(collectTimeBufDelay);
                         //数据采集时间
-                        Date detectionTimeDelay = new Date(D2sDataPackUtil.buf2Date(collectTimeBufDelay, 0));
+                        Date detectionTimeDelay = new Date(D2sDataPackUtil.buf2Date
+                                (collectTimeBufDelay, 0));
                         // 6.检验时间
                         dataPackObject.setDetectionTime(detectionTimeDelay);
                         //读取消息体数据到byte数组
@@ -2225,7 +2612,8 @@ public class DataParserD2s implements IDataParser {
                             int index = 0;
                             while (index < (msgLength - 6)) {
                                 if (dataBufferDelay[index] == (byte) 0x01) { // 动力蓄电池电气数据
-                                    DataPackBattery dataPackBattery = new DataPackBattery(dataPackObject);
+                                    DataPackBattery dataPackBattery = new DataPackBattery
+                                            (dataPackObject);
 
                                     //设置vin码
                                     //  dataPackBattery.setVin(iccid);
@@ -2234,7 +2622,8 @@ public class DataParserD2s implements IDataParser {
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("动力蓄电池电气数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("动力蓄电池电气数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //动力蓄电池字子系统个数
                                     Integer batterySysNumber = eleBuffer[0] & 0xFF;
                                     dataPackBattery.setBatterySysNumber(batterySysNumber);
@@ -2242,23 +2631,32 @@ public class DataParserD2s implements IDataParser {
                                     Integer batterySysIndex = eleBuffer[1] & 0xFF;
                                     dataPackBattery.setBatterySysIndex(batterySysIndex);
                                     //动力蓄电池电压
-                                    Float totalVoltage = (float) ((eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] & 0xFF)) / 10;
-                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalVoltage = (float) ((eleBuffer[2] & 0xFF) << 8 |
+                                            (eleBuffer[3] & 0xFF)) / 10;
+                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackBattery.setTotalVoltage(totalVoltage);
                                     //动力蓄电池电流
-                                    Float totalCurrent = (float) ((eleBuffer[4] & 0xFF) << 8 | (eleBuffer[5] & 0xFF)) / 10 - 1000;
-                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalCurrent = (float) ((eleBuffer[4] & 0xFF) << 8 |
+                                            (eleBuffer[5] & 0xFF)) / 10 - 1000;
+                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackBattery.setTotalCurrent(totalCurrent);
                                     //单体蓄电池总数
-                                    Integer batteryNumber = (eleBuffer[6] & 0xFF) << 8 | (eleBuffer[7] & 0xFF);
+                                    Integer batteryNumber = (eleBuffer[6] & 0xFF) << 8 |
+                                            (eleBuffer[7] & 0xFF);
                                     //本帧起始电池序号
-                                    Integer batteryStartIndex = (eleBuffer[8] & 0xFF) << 8 | (eleBuffer[9] & 0xFF);
+                                    Integer batteryStartIndex = (eleBuffer[8] & 0xFF) << 8 |
+                                            (eleBuffer[9] & 0xFF);
                                     //本帧单体电池总数
                                     Integer batteryPacketNumber = eleBuffer[10] & 0xFF;
                                     //单体电压数组
                                     List<Float> batteryVoltageList = new ArrayList<>();
                                     for (int i = 0; i < batteryPacketNumber; i++) {
-                                        batteryVoltageList.add(new BigDecimal(((float) ((eleBuffer[11 + i * 2] & 0xFF) << 8 | (eleBuffer[12 + i * 2] & 0xFF)) / 1000)).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+                                        batteryVoltageList.add(new BigDecimal(((float) (
+                                                (eleBuffer[11 + i * 2] & 0xFF) << 8 |
+                                                        (eleBuffer[12 + i * 2] & 0xFF)) / 1000)).setScale
+                                                (3, BigDecimal.ROUND_HALF_UP).floatValue());
                                     }
                                     dataPackBattery.setBatteryVoltages(batteryVoltageList);
                                     //-add
@@ -2266,15 +2664,18 @@ public class DataParserD2s implements IDataParser {
                                     //索引增加
                                     index = index + length;
                                 } else if (dataBufferDelay[index] == (byte) 0x02) { // 动力蓄电池包温度数据
-                                    DataPackTemperature dataPackTemperature = new DataPackTemperature(dataPackObject);
+                                    DataPackTemperature dataPackTemperature = new
+                                            DataPackTemperature(dataPackObject);
                                     //设置vin码
                                     //   dataPackTemperature.setVid(iccid);
                                     index += 1;
-                                    int length = 4 + ((dataBufferDelay[index + 2] & 0xFF << 8) | (dataBufferDelay[index + 3] & 0xFF));
+                                    int length = 4 + ((dataBufferDelay[index + 2] & 0xFF << 8) |
+                                            (dataBufferDelay[index + 3] & 0xFF));
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("动力蓄电池电气数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("动力蓄电池包温度数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //动力蓄电池总成个数
                                     Integer batterySysNumber = eleBuffer[0] & 0xFF;
                                     dataPackTemperature.setBatterySysNumber(batterySysNumber);
@@ -2282,7 +2683,8 @@ public class DataParserD2s implements IDataParser {
                                     Integer sysIndex = eleBuffer[1] & 0xFF;
                                     dataPackTemperature.setSysIndex(sysIndex);
                                     //电池温度探针个数
-                                    Integer number = (eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] & 0xFF);
+                                    Integer number = (eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] &
+                                            0xFF);
                                     dataPackTemperature.setNumber(number);
                                     //电池总各温度探针检测到的温度值
                                     List<Integer> temperatureList = new ArrayList<>();
@@ -2294,14 +2696,16 @@ public class DataParserD2s implements IDataParser {
                                     dataPackTargetList.add(new DataPackTarget(dataPackTemperature));
                                     index = index + length;
                                 } else if (dataBufferDelay[index] == (byte) 0x03) { // 整车数据
-                                    DataPackOverview dataPackOverview = new DataPackOverview(dataPackObject);
+                                    DataPackOverview dataPackOverview = new DataPackOverview
+                                            (dataPackObject);
                                     //     dataPackOverview.setVin(iccid);
                                     index += 1;
                                     int length = 20;
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("整车数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("整车数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //车辆状态
                                     Integer vehicleStatus = eleBuffer[0] & 0xFF;
                                     dataPackOverview.setCarStatus(vehicleStatus);
@@ -2312,20 +2716,29 @@ public class DataParserD2s implements IDataParser {
                                     Integer runStatus = eleBuffer[2] & 0xFF;
                                     dataPackOverview.setRunStatus(runStatus);
                                     //车速
-                                    Float vehicleSpeed = (float) ((eleBuffer[3] & 0xFF) << 8 | (eleBuffer[4] & 0xFF)) / 10;
-                                    vehicleSpeed = new BigDecimal(vehicleSpeed).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float vehicleSpeed = (float) ((eleBuffer[3] & 0xFF) << 8 |
+                                            (eleBuffer[4] & 0xFF)) / 10;
+                                    vehicleSpeed = new BigDecimal(vehicleSpeed).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackOverview.setVehicleSpeed(vehicleSpeed);
                                     //累计里程
-                                    Double mileAge = (double) ((eleBuffer[5] & 0xFF) << 24 | (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 | (eleBuffer[8] & 0xFF));
-                                    mileAge = new BigDecimal(mileAge).setScale(1, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double mileAge = (double) ((eleBuffer[5] & 0xFF) << 24 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[8] & 0xFF));
+                                    mileAge = new BigDecimal(mileAge).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackOverview.setMileage(mileAge);
                                     //总电压
-                                    Float totalVoltage = (float) ((eleBuffer[9] & 0xFF) << 8 | (eleBuffer[10] & 0xFF)) / 10;
-                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalVoltage = (float) ((eleBuffer[9] & 0xFF) << 8 |
+                                            (eleBuffer[10] & 0xFF)) / 10;
+                                    totalVoltage = new BigDecimal(totalVoltage).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackOverview.setVoltage(totalVoltage);
                                     //总电流
-                                    Float totalCurrent = (float) ((eleBuffer[11] & 0xFF) << 8 | (eleBuffer[12] & 0xFF)) / 10 - 1000;
-                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float totalCurrent = (float) ((eleBuffer[11] & 0xFF) << 8 |
+                                            (eleBuffer[12] & 0xFF)) / 10 - 1000;
+                                    totalCurrent = new BigDecimal(totalCurrent).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackOverview.setTotalCurrent(totalCurrent);
                                     //SOC
                                     Integer soc = eleBuffer[13] & 0xFF;
@@ -2340,7 +2753,8 @@ public class DataParserD2s implements IDataParser {
                                     Integer driveBrakeStatus = eleBuffer[15] >>> 4 & 0x03;
                                     dataPackOverview.setDriveBrakeStatus(driveBrakeStatus);
                                     //绝缘电阻
-                                    Integer issueValue = (eleBuffer[16] & 0xFF) << 8 | eleBuffer[17] & 0xFF;
+                                    Integer issueValue = (eleBuffer[16] & 0xFF) << 8 |
+                                            eleBuffer[17] & 0xFF;
                                     dataPackOverview.setIssueValue(issueValue);
                                     //-add
                                     dataPackTargetList.add(new DataPackTarget(dataPackOverview));
@@ -2354,7 +2768,8 @@ public class DataParserD2s implements IDataParser {
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("汽车电机部分数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("汽车电机部分数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //电机个数
                                     Integer motorNumber = eleBuffer[0] & 0xFF;
                                     dataPackMotor.setMotorTotal(motorNumber);
@@ -2366,24 +2781,32 @@ public class DataParserD2s implements IDataParser {
                                     dataPackMotor.setMotorStatus(motorStatus);
                                     //驱动电机控制器温度
                                     Integer motorControlerTemperature = (eleBuffer[3] & 0xFF) - 40;
-                                    dataPackMotor.setControllerTemperature(motorControlerTemperature);
+                                    dataPackMotor.setControllerTemperature
+                                            (motorControlerTemperature);
                                     //驱动电机转速
-                                    Integer motorRpm = ((eleBuffer[4] & 0xFF) << 8 | eleBuffer[5] & 0xFF) - 20000;
+                                    Integer motorRpm = ((eleBuffer[4] & 0xFF) << 8 | eleBuffer[5]
+                                            & 0xFF) - 20000;
                                     dataPackMotor.setSpeed(motorRpm);
                                     //驱动电机转矩
-                                    Float motorNm = (float) (((eleBuffer[6] & 0xFF) << 8 | (eleBuffer[7] & 0xFF)) - 20000) / 10;
-                                    motorNm = new BigDecimal(motorNm).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float motorNm = (float) (((eleBuffer[6] & 0xFF) << 8 |
+                                            (eleBuffer[7] & 0xFF)) - 20000) / 10;
+                                    motorNm = new BigDecimal(motorNm).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     dataPackMotor.setTorque(motorNm);
                                     //驱动电机温度
                                     Integer motorTemperature = (eleBuffer[8] & 0xFF) - 40;
                                     dataPackMotor.setMotorTemperature(motorTemperature);
                                     //电机控制器输入电压
-                                    Float motorInputVoltage = (float) ((eleBuffer[9] & 0xFF) << 8 | (eleBuffer[10] & 0xFF)) / 10;
-                                    motorInputVoltage = new BigDecimal(motorInputVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float motorInputVoltage = (float) ((eleBuffer[9] & 0xFF) << 8
+                                            | (eleBuffer[10] & 0xFF)) / 10;
+                                    motorInputVoltage = new BigDecimal(motorInputVoltage)
+                                            .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackMotor.setControllerInputVoltage(motorInputVoltage);
                                     //电机控制器直流母线电流
-                                    Float motorBusCurrent = (float) ((eleBuffer[11] & 0xFF) << 8 | (eleBuffer[12] & 0xFF)) / 10 - 1000;
-                                    motorBusCurrent = new BigDecimal(motorBusCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float motorBusCurrent = (float) ((eleBuffer[11] & 0xFF) << 8
+                                            | (eleBuffer[12] & 0xFF)) / 10 - 1000;
+                                    motorBusCurrent = new BigDecimal(motorBusCurrent).setScale(1,
+                                            BigDecimal.ROUND_HALF_UP).floatValue();
                                     dataPackMotor.setControllerDirectCurrent(motorBusCurrent);
                                     //-add
                                     dataPackTargetList.add(new DataPackTarget(dataPackMotor));
@@ -2394,10 +2817,12 @@ public class DataParserD2s implements IDataParser {
                                     int length = 21;
                                     dataPackPosition = new DataPackPosition(dataPackObject);
                                     //      dataPackPosition.setVin(iccid);
-                                    dataPackPosition.setPositionTime(Calendar.getInstance().getTime());
+                                    dataPackPosition.setPositionTime(Calendar.getInstance()
+                                            .getTime());
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
+
                                     D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump(eleBuffer));
                                     //定位状态：0-有效定位；1-无效定位
                                     Integer isValidate = eleBuffer[0] & 0x01;
@@ -2413,23 +2838,35 @@ public class DataParserD2s implements IDataParser {
                                     //0:东经； 1:西经
                                     Integer lngType = eleBuffer[0] & 0x04;
                                     //经度
-                                    Double longitude = (double) ((eleBuffer[1] & 0xFF) << 24 | (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF) << 8 | (eleBuffer[4] & 0xFF)) * 0.000001f;
-                                    longitude = new BigDecimal(longitude).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double longitude = (double) ((eleBuffer[1] & 0xFF) << 24 |
+                                            (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF) << 8 |
+                                            (eleBuffer[4] & 0xFF)) * 0.000001f;
+                                    longitude = new BigDecimal(longitude).setScale(6, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setLongitude(longitude);
                                     //纬度
-                                    Double latitude = (double) ((eleBuffer[5] & 0xFF) << 24 | (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 | (eleBuffer[8] & 0xFF)) * 0.000001f;
-                                    latitude = new BigDecimal(latitude).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double latitude = (double) ((eleBuffer[5] & 0xFF) << 24 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[8] & 0xFF)) * 0.000001f;
+                                    latitude = new BigDecimal(latitude).setScale(6, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setLatitude(latitude);
                                     //速度
-                                    Float speed = (float) ((eleBuffer[9] & 0xFF) << 8 | (eleBuffer[10] & 0xFF)) / 10;
-                                    speed = new BigDecimal(speed).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float speed = (float) ((eleBuffer[9] & 0xFF) << 8 |
+                                            (eleBuffer[10] & 0xFF)) / 10;
+                                    speed = new BigDecimal(speed).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     dataPackPosition.setSpeed(speed);
                                     //海拔
-                                    Double altitude = (double) ((eleBuffer[11] & 0xFF) << 24 | (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF) << 8 | (eleBuffer[14] & 0xFF)) / 10;
-                                    altitude = new BigDecimal(altitude).setScale(1, BigDecimal.ROUND_HALF_UP).doubleValue();
+                                    Double altitude = (double) ((eleBuffer[11] & 0xFF) << 24 |
+                                            (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF) << 8 |
+                                            (eleBuffer[14] & 0xFF)) / 10;
+                                    altitude = new BigDecimal(altitude).setScale(1, BigDecimal
+                                            .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setAltitude(altitude);
                                     //方向
-                                    Float direction = (float) ((eleBuffer[15] & 0xFF) << 8 | (eleBuffer[16] & 0xFF));
+                                    Float direction = (float) ((eleBuffer[15] & 0xFF) << 8 |
+                                            (eleBuffer[16] & 0xFF));
                                     dataPackPosition.setDirection(direction);
                                     dataPackTargetList.add(new DataPackTarget(dataPackPosition));
                                     index = index + length;
@@ -2443,73 +2880,92 @@ public class DataParserD2s implements IDataParser {
                                     byte[] eleBuffer = new byte[length];
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("极值数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("极值数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
 
                                     //最高电压电池子系统号
                                     Integer batterySystemMaxNo = eleBuffer[0] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高电压电池子系统号",
-                                            batterySystemMaxNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batterySystemMaxNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //最高电压电池单体代号
                                     Integer batteryVoltageMaxNo = eleBuffer[1] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高电压电池单体代号",
-                                            batteryVoltageMaxNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batteryVoltageMaxNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //电池单体电压最高值
-                                    Float batteryVoltageMaxValue = (float) ((eleBuffer[2] & 0xFF) << 8 | (eleBuffer[3] & 0xFF)) / 1000;
-                                    batteryVoltageMaxValue = new BigDecimal(batteryVoltageMaxValue).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float batteryVoltageMaxValue = (float) ((eleBuffer[2] & 0xFF)
+                                            << 8 | (eleBuffer[3] & 0xFF)) / 1000;
+                                    batteryVoltageMaxValue = new BigDecimal
+                                            (batteryVoltageMaxValue).setScale(3, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     peakList.add(new DataPackPeak.Peak(null, "电池单体电压最高值",
-                                            batteryVoltageMaxValue.toString(), "V", "有效值范围： 0～15000（表示 0V～15V）"));
+                                            batteryVoltageMaxValue.toString(), "V", "有效值范围： " +
+                                            "0～15000（表示 0V～15V）"));
 
                                     //最低电压电池子系统号
                                     Integer batterySystemMinNo = eleBuffer[4] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低电压电池子系统号",
-                                            batterySystemMinNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batterySystemMinNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
 
                                     //最低电压电池单体代号
                                     Integer batteryVoltageMinNo = eleBuffer[5] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低电压电池单体代号",
-                                            batteryVoltageMinNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            batteryVoltageMinNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
 
                                     //电池单体电压最低值
-                                    Float batteryVoltageMinValue = (float) ((eleBuffer[6] & 0xFF) << 8 | (eleBuffer[7] & 0xFF)) / 1000;
-                                    batteryVoltageMinValue = new BigDecimal(batteryVoltageMinValue).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+                                    Float batteryVoltageMinValue = (float) ((eleBuffer[6] & 0xFF)
+                                            << 8 | (eleBuffer[7] & 0xFF)) / 1000;
+                                    batteryVoltageMinValue = new BigDecimal
+                                            (batteryVoltageMinValue).setScale(3, BigDecimal
+                                            .ROUND_HALF_UP).floatValue();
                                     peakList.add(new DataPackPeak.Peak(null, "最高电压电池单体代号",
-                                            batteryVoltageMinValue.toString(), "V", "有效值范围： 0～15000（表示 0V～15V）"));
+                                            batteryVoltageMinValue.toString(), "V", "有效值范围： " +
+                                            "0～15000（表示 0V～15V）"));
 
 
                                     //最高温度子系统号
                                     Integer temperatureHighestSystemNo = eleBuffer[8] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高温度子系统号",
-                                            temperatureHighestSystemNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureHighestSystemNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
 
                                     //最高温度探针单体代号
                                     Integer temperatureHighestNo = eleBuffer[9] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最高温度探针单体代号",
-                                            temperatureHighestNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureHighestNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //蓄电池中最高温度值
                                     Integer temperatureHighestValue = (eleBuffer[10] & 0xFF) - 40;
                                     peakList.add(new DataPackPeak.Peak(null, "蓄电池中最高温度值",
-                                            temperatureHighestValue.toString(), "℃", "有效值范围： 0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
+                                            temperatureHighestValue.toString(), "℃", "有效值范围： " +
+                                            "0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
 
                                     //最低温度子系统号
                                     Integer temperatureLowestSystemNo = eleBuffer[11] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低温度子系统号",
-                                            temperatureLowestSystemNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureLowestSystemNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //最低温度探针子系统代号
                                     Integer temperatureLowestNo = eleBuffer[12] & 0xFF;
                                     peakList.add(new DataPackPeak.Peak(null, "最低温度探针子系统代号",
-                                            temperatureLowestNo.toString(), null, "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
+                                            temperatureLowestNo.toString(), null,
+                                            "有效值范围：1～250，“0xFE”表示异常，“0xFF”表示无效。"));
 
                                     //蓄电池中最低温度值
                                     Integer temperatureLowestValue = (eleBuffer[13] & 0xFF) - 40;
                                     peakList.add(new DataPackPeak.Peak(null, "蓄电池中最低温度值",
-                                            temperatureLowestValue.toString(), "℃", "有效值范围： 0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
+                                            temperatureLowestValue.toString(), "℃", "有效值范围： " +
+                                            "0～250（数值偏移量 40℃，表示-40℃～+210℃）"));
 
                                     dataPackPeak.setPeakList(peakList);
                                     //-add
@@ -2518,7 +2974,8 @@ public class DataParserD2s implements IDataParser {
                                     index = index + length;
                                 } else if (dataBufferDelay[index] == (byte) 0x09) { // 透传数据
                                     //can数据
-                                    DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);//hvac数据
+                                    DataPackCanHvac hvac = new DataPackCanHvac(dataPackObject);
+                                    //hvac数据
                                     hvac.setDetectionTime(detectionTimeDelay);
                                     hvac.setDeviceId(iccid);
                                     DataPackCanBcm bcm = new DataPackCanBcm(dataPackObject);//bcm
@@ -2527,13 +2984,15 @@ public class DataParserD2s implements IDataParser {
                                     DataPackCanVms vms = new DataPackCanVms(dataPackObject);//vms
                                     vms.setDetectionTime(detectionTimeDelay);
                                     vms.setDeviceId(iccid);
-                                    DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);//peps
+                                    DataPackCanPeps peps = new DataPackCanPeps(dataPackObject);
+                                    //peps
                                     peps.setDetectionTime(detectionTimeDelay);
                                     peps.setDeviceId(iccid);
                                     DataPackCanEps eps = new DataPackCanEps(dataPackObject);//eps
                                     eps.setDetectionTime(detectionTimeDelay);
                                     eps.setDeviceId(iccid);
-                                    DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);//adas
+                                    DataPackCanAdas adas = new DataPackCanAdas(dataPackObject);
+                                    //adas
                                     adas.setDetectionTime(detectionTimeDelay);
                                     adas.setDeviceId(iccid);
                                     DataPackCanBms bms = new DataPackCanBms(dataPackObject);//bms
@@ -2553,112 +3012,148 @@ public class DataParserD2s implements IDataParser {
                                     int length = canPacketNumber * 12;
                                     index += 1;
                                     byte[] canAllBuffer = new byte[length];
-                                    System.arraycopy(dataBufferDelay, index, canAllBuffer, 0, length);
+                                    System.arraycopy(dataBufferDelay, index, canAllBuffer, 0,
+                                            length);
 
                                     //打印调试信息
-                                    D2sDataPackUtil.debug("透传数据--->" + ByteBufUtil.hexDump(canAllBuffer));
+                                    D2sDataPackUtil.debug("透传数据--->" + ByteBufUtil.hexDump
+                                            (canAllBuffer));
 
                                     int offset = 0;
                                     for (int i = 0; i < canPacketNumber; i++) {
                                         //can id
-                                        int canId = D2sDataPackUtil.getInt4Bigendian(canAllBuffer, offset + i * 12, offset + i * 12 + 4);
-                                        byte[] canBuffer = D2sDataPackUtil.getRange(canAllBuffer, offset + i * 12 + 4, offset + i * 12 + 12);
+                                        int canId = D2sDataPackUtil.getInt4Bigendian
+                                                (canAllBuffer, offset + i * 12, offset + i * 12 + 4);
+                                        byte[] canBuffer = D2sDataPackUtil.getRange(canAllBuffer,
+                                                offset + i * 12 + 4, offset + i * 12 + 12);
                                         DataPackCanVersion dataPackCanVersion = null;
                                         if (canId == (int) 0x18FF64DA) { //icu版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("icu");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("icu版本[0x18FF64DA]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("icu版本[0x18FF64DA]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF6401) { //vms版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("vms");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("vms版本[0x18FF6401]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("vms版本[0x18FF6401]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64F4) {//bms版本
 
                                         } else if (canId == (int) 0x18FF64EF) {//mc版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("mc");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("mc版本[0x18FF64EF]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("mc版本[0x18FF64EF]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DD) {//peps版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("peps");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("peps版本[0x18FF64DD]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("peps版本[0x18FF64DD]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64E5) {//obc版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("obc");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("obc版本[0x18FF64E5]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("obc版本[0x18FF64E5]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DE) {//hvac版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("hvac");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("hvac版本[0x18FF64DE]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("hvac版本[0x18FF64DE]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64E7) {//gprs版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("gprs");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("gprs版本[0x18FF64E7]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("gprs版本[0x18FF64E7]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DC) {//bcm版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("bcm");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("bcm版本[0x18FF64DC]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("bcm版本[0x18FF64DC]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DF) {//adas版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("adas");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[4];
                                             System.arraycopy(canBuffer, 0, bf, 0, 4);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("adas版本[0x18FF64DF]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 4));
+                                            D2sDataPackUtil.debug("adas版本[0x18FF64DF]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 4));
                                         } else if (canId == (int) 0x18FF64DB) {//gps版本
-                                            dataPackCanVersion = new DataPackCanVersion(dataPackObject);
+                                            dataPackCanVersion = new DataPackCanVersion
+                                                    (dataPackObject);
                                             dataPackCanVersion.setCanModelName("gps");
                                             dataPackCanVersion.setCanId(canId);
                                             byte[] bf = new byte[6];
                                             System.arraycopy(canBuffer, 0, bf, 0, 6);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("gps版本[0x18FF64DB]--->" + ByteBufUtil.hexDump(bf));
-                                            dataPackCanVersion.setVersion(D2sDataPackUtil.getAsciiString(bf, 0, 6));
+                                            D2sDataPackUtil.debug("gps版本[0x18FF64DB]--->" +
+                                                    ByteBufUtil.hexDump(bf));
+                                            dataPackCanVersion.setVersion(D2sDataPackUtil
+                                                    .getAsciiString(bf, 0, 6));
                                         } else if (canId == (int) 0x08FF00DD) {//peps PEPS_SEND1_MSG
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("PEPS_SEND1_MSG[0x08FF00DD]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("PEPS_SEND1_MSG[0x08FF00DD]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             int rkeLockCmd = (int) (bit64 & 0x0F);//遥控器状态
                                             peps.setRkelockCmd(rkeLockCmd);
@@ -2672,7 +3167,8 @@ public class DataParserD2s implements IDataParser {
                                             int pepsIcuAlarm = (int) (bit64 & 0x0F);//仪表报警提示
                                             peps.setPepsicuAlarm(pepsIcuAlarm);
                                             bit64 = bit64 >> 4;
-                                            int pepsEscLpowerEnable = (int) (bit64 & 0x03);//ESCL电源状态
+                                            int pepsEscLpowerEnable = (int) (bit64 & 0x03);
+                                            //ESCL电源状态
                                             peps.setPepsEsclpowerEnable(pepsEscLpowerEnable);
                                             bit64 = bit64 >> 2;
                                             int sysPowMode = (int) (bit64 & 0x03);//整车电源档位
@@ -2689,7 +3185,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x08FF01DD) {//peps
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("peps[0x08FF01DD]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("peps[0x08FF01DD]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int fobPosition = (byte) (bit64 & 0x07);//钥匙位置
                                             peps.setFobPosition(fobPosition);
                                             bit64 = bit64 >> 3;
@@ -2744,7 +3241,9 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1CFF00DE) {//HVAC_General_MSG
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
                                             int runstatus = (int) (bit64 & 0x03);//空调启动状态
                                             hvac.setRunStatus(runstatus);
                                             bit64 = bit64 >>> 2;
@@ -2769,7 +3268,9 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1CFF01DE) {//HVAC_FaultList_MSG
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("HVAC_FaultList_MSG[0x1CFF01DE]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug
+                                                    ("HVAC_FaultList_MSG[0x1CFF01DE]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
                                             int errModel = 0;//模式电机故障
                                             if ((bit64 & 0x01) == 0x00) {
                                                 errModel = 0x00;
@@ -2804,10 +3305,12 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1CFF00DA) {//icu
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("icu[0x1CFF00DA]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("icu[0x1CFF00DA]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             float mileAge = (bit64 & 0xFFFFFF) * 0.1f;
                                             BigDecimal bigDecimal = new BigDecimal(mileAge); //总里程
-                                            mileAge = bigDecimal.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            mileAge = bigDecimal.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             bit64 = bit64 >>> 32;
                                             int brakeSysAlarm = (int) (bit64 & 0x01); //制动系统报警
                                             bit64 = bit64 >>> 1;
@@ -2815,11 +3318,13 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >>> 2;
                                             float leaveMileAge = (bit64 & 0xFFFF) * 0.1f;
                                             BigDecimal bigDecimal1 = new BigDecimal(mileAge); //里程
-                                            leaveMileAge = bigDecimal1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            leaveMileAge = bigDecimal1.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                         } else if (canId == (int) 0x0CFF00DC) {//bcm BCM_General
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BCM_General[0x0CFF00DC]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("BCM_General[0x0CFF00DC]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             Integer runStatus = (int) (bit64 & 0x0F);//BCM运行状态（阶段）
                                             bcm.setRunStatus(runStatus);
 
@@ -2836,7 +3341,8 @@ public class DataParserD2s implements IDataParser {
                                             bcm.setHandbrakeStatus(handbrakeStatus);
 
                                             bit64 = bit64 >> 1;
-                                            int iscrash = (int) (bit64 & 0x01);//碰撞是否发生bit64 = bit64 >> 1;
+                                            int iscrash = (int) (bit64 & 0x01);//碰撞是否发生bit64 =
+                                            // bit64 >> 1;
                                             bcm.setIscrash(iscrash);
 
                                             bit64 = bit64 >> 1;
@@ -2845,9 +3351,11 @@ public class DataParserD2s implements IDataParser {
 
                                             bit64 = bit64 >> 4;
                                             bit64 = bit64 >> 1;
-                                            float dc12voltage = ((float) (bit64 & 0xFF)) * 0.1f;//12V蓄电池电压
+                                            float dc12voltage = ((float) (bit64 & 0xFF)) * 0.1f;
+                                            //12V蓄电池电压
                                             BigDecimal bigDecimal = new BigDecimal(dc12voltage);
-                                            dc12voltage = bigDecimal.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            dc12voltage = bigDecimal.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             bcm.setDc12Voltage(dc12voltage);
 
                                             bit64 = bit64 >> 8;
@@ -2859,13 +3367,15 @@ public class DataParserD2s implements IDataParser {
                                             bcm.setLeftWinOutStatus(leftWinOutStatus);
 
                                             bit64 = bit64 >> 2;
-                                            int rightWinOutStatus = (int) (bit64 & 0x03);//右前玻璃升降输出状态
+                                            int rightWinOutStatus = (int) (bit64 & 0x03);
+                                            //右前玻璃升降输出状态
                                             bcm.setRightWinOutStatus(rightWinOutStatus);
 
                                         } else if (canId == (int) 0x0CFF01DC) {//bcm BCM_SysSt
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BCM_SysSt[0x0CFF01DC]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("BCM_SysSt[0x0CFF01DC]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int backWinIsHeat = (int) (bit64 & 0x01);//后挡风玻璃加热是否开
                                             bcm.setBackWinIsHeat(backWinIsHeat);
 
@@ -2921,13 +3431,16 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >>> 3;
                                             // reserve
                                             bit64 = bit64 >>> 1;
-                                            int backDoorLockStatus = (byte) (bit64 & 0x01);//后背门锁是否锁止
+                                            int backDoorLockStatus = (byte) (bit64 & 0x01);
+                                            //后背门锁是否锁止
                                             bcm.setBackDoorLockStatus(backDoorLockStatus);
                                             bit64 = bit64 >>> 1;
-                                            int leftDoorLockStatus = (byte) (bit64 & 0x01);//左前门门锁是否锁止
+                                            int leftDoorLockStatus = (byte) (bit64 & 0x01);
+                                            //左前门门锁是否锁止
                                             bcm.setLeftDoorLockStatus(leftDoorLockStatus);
                                             bit64 = bit64 >>> 1;
-                                            int rightDoorLockStatus = (byte) (bit64 & 0x01);//右前门门锁是否锁止
+                                            int rightDoorLockStatus = (byte) (bit64 & 0x01);
+                                            //右前门门锁是否锁止
                                             bcm.setRightDoorLockStatus(rightDoorLockStatus);
                                             bit64 = bit64 >>> 1;
                                             int bcmArmstatus = (byte) (bit64 & 0x01);//
@@ -2969,7 +3482,8 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >>> 1;
                                             // reserved
                                             bit64 = bit64 >>> 8;
-                                            int isKeyVoltageLow = (byte) (bit64 & 0x01);//遥控钥匙电池电量是否低(PEPS指令)
+                                            int isKeyVoltageLow = (byte) (bit64 & 0x01);
+                                            //遥控钥匙电池电量是否低(PEPS指令)
                                             bcm.setIsKeyVoltageLow(isKeyVoltageLow);
                                             bit64 = bit64 >>> 1;
                                             int inbrakeStatus = (int) (bit64 & 0x07);//非法入侵状况
@@ -2978,7 +3492,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C00501) {//VMS_Info2
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("VMS_Info2[0x18C00501]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("VMS_Info2[0x18C00501]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             bit64 = bit64 >> 16;
                                             int motorStatus = (int) (bit64 & 0x03);//电机当前状态
                                             vms.setMotorStatus(motorStatus);
@@ -2986,10 +3501,13 @@ public class DataParserD2s implements IDataParser {
                                             int isMotorTempHigh = (int) (bit64 & 0x01);//电机温度是否过高
                                             vms.setIsMotorTempHigh(isMotorTempHigh);
                                             bit64 = bit64 >> 1;
-                                            int isMotorControlerTempHigh = (int) (bit64 & 0x01);//电机控制器温度是否过高
-                                            vms.setIsMotorControlerTempHigh(isMotorControlerTempHigh);
+                                            int isMotorControlerTempHigh = (int) (bit64 & 0x01);
+                                            //电机控制器温度是否过高
+                                            vms.setIsMotorControlerTempHigh
+                                                    (isMotorControlerTempHigh);
                                             bit64 = bit64 >> 1;
-                                            int isMotorControlerErr = (int) (bit64 & 0x01);//电机控制器是否故障
+                                            int isMotorControlerErr = (int) (bit64 & 0x01);
+                                            //电机控制器是否故障
                                             vms.setIsMotorControlerErr(isMotorControlerErr);
                                             bit64 = bit64 >> 1;
                                             int outAlarmInfo = (int) (bit64 & 0x03);//动力输出报警指示
@@ -2997,14 +3515,19 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C00301) {//VMS_Msg1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("VMS_Msg1[0x18C00301]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float batteryGroupCurrent = ((float) (bit64 & 0xFFFF) / 10.0f) - 350.0f;//电池组电流
-                                            BigDecimal bigDecimal = new BigDecimal(batteryGroupCurrent);
-                                            batteryGroupCurrent = bigDecimal.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("VMS_Msg1[0x18C00301]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float batteryGroupCurrent = ((float) (bit64 & 0xFFFF)
+                                                    / 10.0f) - 350.0f;//电池组电流
+                                            BigDecimal bigDecimal = new BigDecimal
+                                                    (batteryGroupCurrent);
+                                            batteryGroupCurrent = bigDecimal.setScale(1,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             vms.setBatteryGroupCurrent(batteryGroupCurrent);
 
                                             bit64 = bit64 >>> 16;
-                                            float batteryGroupVoltage = (float) (bit64 & 0xFF);//电池组电压
+                                            float batteryGroupVoltage = (float) (bit64 & 0xFF);
+                                            //电池组电压
                                             vms.setBatteryGroupVoltage(batteryGroupVoltage);
                                             bit64 = bit64 >>> 8;
                                             int leaveBattery = (int) (bit64 & 0xFF);//剩余电量
@@ -3012,7 +3535,8 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >>> 8;
                                             float speed = (float) (bit64 & 0xFF) * 0.5f;//车速
                                             BigDecimal bigDecimal1 = new BigDecimal(speed);
-                                            speed = bigDecimal1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            speed = bigDecimal1.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             vms.setSpeed(speed);
                                             bit64 = bit64 >>> 8;
                                             int motorSysTemp = (int) (bit64 & 0xFF) - 40;//电机系统温度
@@ -3038,7 +3562,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x0CF10501) {//
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("[0x0CF10501]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("[0x0CF10501]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int workType = (int) (bit64 & 0x03);
                                             vms.setWorkType(workType);
                                             bit64 = bit64 >>> 2;
@@ -3080,31 +3605,38 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18FF00E0) {//eps EPS_Function
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("EPS_Function[0x18FF00E0]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("EPS_Function[0x18FF00E0]--->"
+                                                    + ByteBufUtil.hexDump(canBuffer));
                                             int errLevel = (int) (bit64 & 0xFF); //EPS 故障等级
                                             eps.setErrLevel(errLevel);
                                             bit64 = bit64 >> 8;
                                             int isWork = (int) (bit64 & 0xFF);//EPS 工作状态
                                             eps.setIsWork(isWork);
                                             bit64 = bit64 >> 8;
-                                            float helpMoment = (float) ((bit64 & 0xFFFF)) * 0.1f - 25.0f;//EPS 助力力矩
+                                            float helpMoment = (float) ((bit64 & 0xFFFF)) * 0.1f
+                                                    - 25.0f;//EPS 助力力矩
                                             BigDecimal b1 = new BigDecimal(helpMoment);
-                                            helpMoment = b1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            helpMoment = b1.setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             eps.setHelpMoment(helpMoment);
                                             bit64 = bit64 >> 16;
-                                            float electricity = (float) (bit64 & 0xFFFF) * 0.1f;//EPS 电机工作电流
+                                            float electricity = (float) (bit64 & 0xFFFF) * 0.1f;
+                                            //EPS 电机工作电流
                                             BigDecimal b2 = new BigDecimal(electricity);
-                                            electricity = b2.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            electricity = b2.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             eps.setElectricity(electricity);
                                             bit64 = bit64 >> 16;
                                             float voltage = (float) (bit64 & 0xFF) * 0.1f;//电源电压
                                             BigDecimal b3 = new BigDecimal(voltage);
-                                            voltage = b3.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            voltage = b3.setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             eps.setVoltage(voltage);
                                         } else if (canId == (int) 0x18FF01E0) {//eps EPS_Error
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("EPS_Error[0x18FF01E0]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("EPS_Error[0x18FF01E0]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int isSensorErr = (int) (bit64 & 0x01);//EPS传感器故障
                                             eps.setIsSensorErr(isSensorErr);
                                             bit64 = bit64 >>> 1;
@@ -3135,7 +3667,8 @@ public class DataParserD2s implements IDataParser {
                                             int canEcuErr = (byte) (bit64 & 0x01);//CAN控制器故障
                                             eps.setIsCanCtrlErr(canEcuErr);
                                             bit64 = bit64 >>> 1;
-                                            int vspeedSignalEnable = (byte) (bit64 & 0x01);//钥匙位置或车速信号失效
+                                            int vspeedSignalEnable = (byte) (bit64 & 0x01);
+                                            //钥匙位置或车速信号失效
                                             eps.setIsKeyInvalid(vspeedSignalEnable);
                                             bit64 = bit64 >>> 1;
                                             int tempSensorLower = (byte) (bit64 & 0x01);//温度传感器超下限
@@ -3146,7 +3679,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x04FF00C8) {//acu ACU_SysSt
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("ACU_SysSt[0x04FF00C8]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("ACU_SysSt[0x04FF00C8]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             bit64 = bit64 >>> 8;
                                             int isCrash = (int) (bit64 & 0x01);//碰撞状态
                                             bit64 = bit64 >>> 1;
@@ -3157,7 +3691,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x10FF01DF) {//adas ADAS_Msg1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("ADAS_Msg1[0x10FF01DF]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("ADAS_Msg1[0x10FF01DF]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int leftLaneDetected = (int) (bit64 & 0x01);//左车道检测
                                             adas.setLeftLaneDetected(leftLaneDetected);
                                             bit64 = bit64 >> 1;
@@ -3188,17 +3723,21 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C0EFF4) {//BMS_GPRS_msg1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_GPRS_msg1[0x18C0EFF4]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("BMS_GPRS_msg1[0x18C0EFF4]--->"
+                                                    + ByteBufUtil.hexDump(canBuffer));
                                             float totalVoltage = (float) (bit64 & 0xFFFF);//总电压
                                             bms.setTotalVoltage(totalVoltage);
                                             bit64 = bit64 >>> 16;
-                                            float totalCurrent = (float) (bit64 & 0xFFFF) * 0.1f - 350.0f;
+                                            float totalCurrent = (float) (bit64 & 0xFFFF) * 0.1f
+                                                    - 350.0f;
                                             BigDecimal b1 = new BigDecimal(totalCurrent);
-                                            totalCurrent = b1.setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();//总电流
+                                            totalCurrent = b1.setScale(1, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();//总电流
                                             bms.setTotalCurrent(totalCurrent);
 
                                             bit64 = bit64 >>> 16;
-                                            int isChargerConnected = (int) (bit64 & 0x01);//外接充电线连接状态
+                                            int isChargerConnected = (int) (bit64 & 0x01);
+                                            //外接充电线连接状态
                                             bms.setIsChargerConnected(isChargerConnected);
                                             bit64 = bit64 >>> 1;
                                             int cpSignal = (int) (bit64 & 0x01);//cp信号
@@ -3213,7 +3752,8 @@ public class DataParserD2s implements IDataParser {
                                             int isConnectCharger = (int) (bit64 & 0x01);//与充电机通讯状态
                                             bms.setIsConnectCharger(isConnectCharger);
                                             bit64 = bit64 >>> 1;
-                                            int isBatteryGroupBalance = (int) (bit64 & 0x01);//电池包均衡状态
+                                            int isBatteryGroupBalance = (int) (bit64 & 0x01);
+                                            //电池包均衡状态
                                             bms.setIsBatteryGroupBalance(isBatteryGroupBalance);
                                             bit64 = bit64 >>> 1;
                                             int fanStatus = (int) (bit64 & 0x01);//
@@ -3244,10 +3784,13 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18C0EEF4) { //BmsMsg2
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BmsMsg2[0x18C0EEF4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltageHighest = (float) ((bit64 & 0xFFFF) * 0.001f);
+                                            D2sDataPackUtil.debug("BmsMsg2[0x18C0EEF4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltageHighest = (float) ((bit64 & 0xFFFF) *
+                                                    0.001f);
                                             BigDecimal b1 = new BigDecimal(voltageHighest);
-                                            voltageHighest = b1.setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();//最高单体电压
+                                            voltageHighest = b1.setScale(3, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();//最高单体电压
                                             bms.setVoltageHighest(voltageHighest);
                                             bit64 = bit64 >> 16;
 
@@ -3255,9 +3798,11 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >> 8;
                                             bms.setVoltageHighestNo(voltageHighestNo);
 
-                                            float voltageLowest = (float) ((bit64 & 0xFFFF) * 0.001f);//最低单体电压
+                                            float voltageLowest = (float) ((bit64 & 0xFFFF) *
+                                                    0.001f);//最低单体电压
                                             BigDecimal b2 = new BigDecimal(voltageLowest);
-                                            voltageLowest = b1.setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            voltageLowest = b1.setScale(3, BigDecimal
+                                                    .ROUND_HALF_UP).floatValue();
                                             bms.setVoltageLowest(voltageLowest);
 
                                             bit64 = bit64 >> 16;
@@ -3274,254 +3819,368 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x10C000F4) {//单体电压-start-1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x10C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage1 = (float) ((bit64 & 0x1FF) * 0.01f);//1#单体电池电压
-                                            voltage1 = BigDecimal.valueOf(voltage1).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x10C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage1 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //1#单体电池电压
+                                            voltage1 = BigDecimal.valueOf(voltage1).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[0] = voltage1;
                                             bit64 = bit64 >> 9;
-                                            float voltage2 = (float) ((bit64 & 0x1FF) * 0.01f);//2#单体电池电压
-                                            voltage2 = BigDecimal.valueOf(voltage2).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage2 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //2#单体电池电压
+                                            voltage2 = BigDecimal.valueOf(voltage2).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[1] = voltage2;
                                             bit64 = bit64 >> 9;
-                                            float voltage3 = (float) ((bit64 & 0x1FF) * 0.01f);//3#单体电池电压
-                                            voltage3 = BigDecimal.valueOf(voltage3).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage3 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //3#单体电池电压
+                                            voltage3 = BigDecimal.valueOf(voltage3).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[2] = voltage3;
                                             bit64 = bit64 >> 9;
-                                            float voltage4 = (float) ((bit64 & 0x1FF) * 0.01f);//4#单体电池电压
-                                            voltage4 = BigDecimal.valueOf(voltage4).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage4 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //4#单体电池电压
+                                            voltage4 = BigDecimal.valueOf(voltage4).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[3] = voltage4;
                                             bit64 = bit64 >> 9;
-                                            float voltage5 = (float) ((bit64 & 0x1FF) * 0.01f);//5#单体电池电压
-                                            voltage5 = BigDecimal.valueOf(voltage5).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage5 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //5#单体电池电压
+                                            voltage5 = BigDecimal.valueOf(voltage5).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[4] = voltage5;
                                             bit64 = bit64 >> 9;
-                                            float voltage6 = (float) ((bit64 & 0x1FF) * 0.01f);//6#单体电池电压
-                                            voltage6 = BigDecimal.valueOf(voltage6).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage6 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //6#单体电池电压
+                                            voltage6 = BigDecimal.valueOf(voltage6).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[5] = voltage6;
                                             bit64 = bit64 >> 9;
-                                            float voltage7 = (float) ((bit64 & 0x1FF) * 0.01f);//7#单体电池电压
-                                            voltage7 = BigDecimal.valueOf(voltage7).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage7 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //7#单体电池电压
+                                            voltage7 = BigDecimal.valueOf(voltage7).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[6] = voltage7;
                                         } else if (canId == (int) 0x14C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x14C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage8 = (float) ((bit64 & 0x1FF) * 0.01f);//8#单体电池电压
-                                            voltage8 = BigDecimal.valueOf(voltage8).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x14C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage8 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //8#单体电池电压
+                                            voltage8 = BigDecimal.valueOf(voltage8).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[7] = voltage8;
                                             bit64 = bit64 >> 9;
-                                            float voltage9 = (float) ((bit64 & 0x1FF) * 0.01f);//9#单体电池电压
-                                            voltage9 = BigDecimal.valueOf(voltage9).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage9 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //9#单体电池电压
+                                            voltage9 = BigDecimal.valueOf(voltage9).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[8] = voltage9;
                                             bit64 = bit64 >> 9;
-                                            float voltage10 = (float) ((bit64 & 0x1FF) * 0.01f);//10#单体电池电压
-                                            voltage10 = BigDecimal.valueOf(voltage10).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage10 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //10#单体电池电压
+                                            voltage10 = BigDecimal.valueOf(voltage10).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[9] = voltage10;
                                             bit64 = bit64 >> 9;
-                                            float voltage11 = (float) ((bit64 & 0x1FF) * 0.01f);//11#单体电池电压
-                                            voltage11 = BigDecimal.valueOf(voltage11).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage11 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //11#单体电池电压
+                                            voltage11 = BigDecimal.valueOf(voltage11).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[10] = voltage11;
                                             bit64 = bit64 >> 9;
-                                            float voltage12 = (float) ((bit64 & 0x1FF) * 0.01f);//12#单体电池电压
-                                            voltage12 = BigDecimal.valueOf(voltage12).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage12 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //12#单体电池电压
+                                            voltage12 = BigDecimal.valueOf(voltage12).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[11] = voltage12;
                                             bit64 = bit64 >> 9;
-                                            float voltage13 = (float) ((bit64 & 0x1FF) * 0.01f);//13#单体电池电压
-                                            voltage13 = BigDecimal.valueOf(voltage13).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage13 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //13#单体电池电压
+                                            voltage13 = BigDecimal.valueOf(voltage13).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[12] = voltage13;
                                             bit64 = bit64 >> 9;
-                                            float voltage14 = (float) ((bit64 & 0x1FF) * 0.01f);//14#单体电池电压
-                                            voltage14 = BigDecimal.valueOf(voltage14).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage14 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //14#单体电池电压
+                                            voltage14 = BigDecimal.valueOf(voltage14).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[13] = voltage14;
                                         } else if (canId == (int) 0x18C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x18C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage15 = (float) ((bit64 & 0x1FF) * 0.01f);//15#单体电池电压
-                                            voltage15 = BigDecimal.valueOf(voltage15).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x18C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage15 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //15#单体电池电压
+                                            voltage15 = BigDecimal.valueOf(voltage15).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[14] = voltage15;
                                             bit64 = bit64 >> 9;
-                                            float voltage16 = (float) ((bit64 & 0x1FF) * 0.01f);//16#单体电池电压
-                                            voltage16 = BigDecimal.valueOf(voltage16).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage16 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //16#单体电池电压
+                                            voltage16 = BigDecimal.valueOf(voltage16).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[15] = voltage16;
                                             bit64 = bit64 >> 9;
-                                            float voltage17 = (float) ((bit64 & 0x1FF) * 0.01f);//17#单体电池电压
-                                            voltage17 = BigDecimal.valueOf(voltage17).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage17 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //17#单体电池电压
+                                            voltage17 = BigDecimal.valueOf(voltage17).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[16] = voltage17;
                                             bit64 = bit64 >> 9;
-                                            float voltage18 = (float) ((bit64 & 0x1FF) * 0.01f);//18#单体电池电压
-                                            voltage18 = BigDecimal.valueOf(voltage18).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage18 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //18#单体电池电压
+                                            voltage18 = BigDecimal.valueOf(voltage18).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[17] = voltage18;
                                             bit64 = bit64 >> 9;
-                                            float voltage19 = (float) ((bit64 & 0x1FF) * 0.01f);//19#单体电池电压
-                                            voltage19 = BigDecimal.valueOf(voltage19).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage19 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //19#单体电池电压
+                                            voltage19 = BigDecimal.valueOf(voltage19).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[18] = voltage19;
                                             bit64 = bit64 >> 9;
-                                            float voltage20 = (float) ((bit64 & 0x1FF) * 0.01f);//20#单体电池电压
-                                            voltage20 = BigDecimal.valueOf(voltage20).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage20 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //20#单体电池电压
+                                            voltage20 = BigDecimal.valueOf(voltage20).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[19] = voltage20;
                                             bit64 = bit64 >> 9;
-                                            float voltage21 = (float) ((bit64 & 0x1FF) * 0.01f);//21#单体电池电压
-                                            voltage21 = BigDecimal.valueOf(voltage21).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage21 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //21#单体电池电压
+                                            voltage21 = BigDecimal.valueOf(voltage21).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[20] = voltage21;
                                         } else if (canId == (int) 0x1CC000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x1CC000F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage22 = (float) ((bit64 & 0x1FF) * 0.01f);//22#单体电池电压
-                                            voltage22 = BigDecimal.valueOf(voltage22).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x1CC000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage22 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //22#单体电池电压
+                                            voltage22 = BigDecimal.valueOf(voltage22).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[21] = voltage22;
                                             bit64 = bit64 >> 9;
-                                            float voltage23 = (float) ((bit64 & 0x1FF) * 0.01f);//23#单体电池电压
-                                            voltage23 = BigDecimal.valueOf(voltage23).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage23 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //23#单体电池电压
+                                            voltage23 = BigDecimal.valueOf(voltage23).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[22] = voltage23;
                                             bit64 = bit64 >> 9;
-                                            float voltage24 = (float) ((bit64 & 0x1FF) * 0.01f);//24#单体电池电压
-                                            voltage24 = BigDecimal.valueOf(voltage24).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage24 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //24#单体电池电压
+                                            voltage24 = BigDecimal.valueOf(voltage24).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[23] = voltage24;
                                             bit64 = bit64 >> 9;
-                                            float voltage25 = (float) ((bit64 & 0x1FF) * 0.01f);//25#单体电池电压
-                                            voltage25 = BigDecimal.valueOf(voltage25).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage25 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //25#单体电池电压
+                                            voltage25 = BigDecimal.valueOf(voltage25).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[24] = voltage25;
                                             bit64 = bit64 >> 9;
-                                            float voltage26 = (float) ((bit64 & 0x1FF) * 0.01f);//26#单体电池电压
-                                            voltage26 = BigDecimal.valueOf(voltage26).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage26 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //26#单体电池电压
+                                            voltage26 = BigDecimal.valueOf(voltage26).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[25] = voltage26;
                                             bit64 = bit64 >> 9;
-                                            float voltage27 = (float) ((bit64 & 0x1FF) * 0.01f);//27#单体电池电压
-                                            voltage27 = BigDecimal.valueOf(voltage27).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage27 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //27#单体电池电压
+                                            voltage27 = BigDecimal.valueOf(voltage27).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[26] = voltage27;
                                             bit64 = bit64 >> 9;
-                                            float voltage28 = (float) ((bit64 & 0x1FF) * 0.01f);//28#单体电池电压
-                                            voltage28 = BigDecimal.valueOf(voltage28).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage28 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //28#单体电池电压
+                                            voltage28 = BigDecimal.valueOf(voltage28).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[27] = voltage28;
                                         } else if (canId == (int) 0x1CC007F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x1CC007F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage29 = (float) ((bit64 & 0x1FF) * 0.01f);//29#单体电池电压
-                                            voltage29 = BigDecimal.valueOf(voltage29).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x1CC007F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage29 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //29#单体电池电压
+                                            voltage29 = BigDecimal.valueOf(voltage29).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[28] = voltage29;
                                             bit64 = bit64 >> 9;
-                                            float voltage30 = (float) ((bit64 & 0x1FF) * 0.01f);//30#单体电池电压
-                                            voltage30 = BigDecimal.valueOf(voltage30).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage30 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //30#单体电池电压
+                                            voltage30 = BigDecimal.valueOf(voltage30).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[29] = voltage30;
                                             bit64 = bit64 >> 9;
-                                            float voltage31 = (float) ((bit64 & 0x1FF) * 0.01f);//31#单体电池电压
-                                            voltage31 = BigDecimal.valueOf(voltage31).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage31 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //31#单体电池电压
+                                            voltage31 = BigDecimal.valueOf(voltage31).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[30] = voltage31;
                                             bit64 = bit64 >> 9;
-                                            float voltage32 = (float) ((bit64 & 0x1FF) * 0.01f);//32#单体电池电压
-                                            voltage32 = BigDecimal.valueOf(voltage32).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage32 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //32#单体电池电压
+                                            voltage32 = BigDecimal.valueOf(voltage32).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[31] = voltage32;
                                             bit64 = bit64 >> 9;
-                                            float voltage33 = (float) ((bit64 & 0x1FF) * 0.01f);//33#单体电池电压
-                                            voltage33 = BigDecimal.valueOf(voltage33).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage33 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //33#单体电池电压
+                                            voltage33 = BigDecimal.valueOf(voltage33).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[32] = voltage33;
                                             bit64 = bit64 >> 9;
-                                            float voltage34 = (float) ((bit64 & 0x1FF) * 0.01f);//34#单体电池电压
-                                            voltage34 = BigDecimal.valueOf(voltage34).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage34 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //34#单体电池电压
+                                            voltage34 = BigDecimal.valueOf(voltage34).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[33] = voltage34;
                                             bit64 = bit64 >> 9;
-                                            float voltage35 = (float) ((bit64 & 0x1FF) * 0.01f);//35#单体电池电压
-                                            voltage35 = BigDecimal.valueOf(voltage35).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage35 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //35#单体电池电压
+                                            voltage35 = BigDecimal.valueOf(voltage35).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[34] = voltage35;
                                         } else if (canId == (int) 0x1CC008F4) {//单体电压-end-6
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("单体电压[0x1CC008F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float voltage36 = (float) ((bit64 & 0x1FF) * 0.01f);//36#单体电池电压
-                                            voltage36 = BigDecimal.valueOf(voltage36).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("单体电压[0x1CC008F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float voltage36 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //36#单体电池电压
+                                            voltage36 = BigDecimal.valueOf(voltage36).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[35] = voltage36;
                                             bit64 = bit64 >> 9;
-                                            float voltage37 = (float) ((bit64 & 0x1FF) * 0.01f);//37#单体电池电压
-                                            voltage37 = BigDecimal.valueOf(voltage37).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage37 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //37#单体电池电压
+                                            voltage37 = BigDecimal.valueOf(voltage37).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[36] = voltage37;
                                             bit64 = bit64 >> 9;
-                                            float voltage38 = (float) ((bit64 & 0x1FF) * 0.01f);//38#单体电池电压
-                                            voltage38 = BigDecimal.valueOf(voltage38).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage38 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //38#单体电池电压
+                                            voltage38 = BigDecimal.valueOf(voltage38).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[37] = voltage38;
                                             bit64 = bit64 >> 9;
-                                            float voltage39 = (float) ((bit64 & 0x1FF) * 0.01f);//39#单体电池电压
-                                            voltage39 = BigDecimal.valueOf(voltage39).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage39 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //39#单体电池电压
+                                            voltage39 = BigDecimal.valueOf(voltage39).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[38] = voltage39;
                                             bit64 = bit64 >> 9;
-                                            float voltage40 = (float) ((bit64 & 0x1FF) * 0.01f);//40#单体电池电压
-                                            voltage40 = BigDecimal.valueOf(voltage40).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage40 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //40#单体电池电压
+                                            voltage40 = BigDecimal.valueOf(voltage40).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[39] = voltage40;
                                             bit64 = bit64 >> 9;
-                                            float voltage41 = (float) ((bit64 & 0x1FF) * 0.01f);//41#单体电池电压
-                                            voltage41 = BigDecimal.valueOf(voltage41).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage41 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //41#单体电池电压
+                                            voltage41 = BigDecimal.valueOf(voltage41).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[40] = voltage41;
                                             bit64 = bit64 >> 9;
-                                            float voltage42 = (float) ((bit64 & 0x1FF) * 0.01f);//42#单体电池电压
-                                            voltage42 = BigDecimal.valueOf(voltage42).setScale(2, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltage42 = (float) ((bit64 & 0x1FF) * 0.01f);
+                                            //42#单体电池电压
+                                            voltage42 = BigDecimal.valueOf(voltage42).setScale(2,
+                                                    BigDecimal.ROUND_HALF_UP).floatValue();
                                             voltageArray[41] = voltage42;
                                         } else if (canId == (int) 0x18FF05F4) {//BMS_Error
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_Error[0x18FF05F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int sellVoltageHighestChargerL4 = (int) (bit64 & 0x01);//单体电压超高-充电-4级
-                                            bms.setSellVolHighestChargerl4(sellVoltageHighestChargerL4);
+                                            D2sDataPackUtil.debug("BMS_Error[0x18FF05F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            int sellVoltageHighestChargerL4 = (int) (bit64 &
+                                                    0x01);//单体电压超高-充电-4级
+                                            bms.setSellVolHighestChargerl4
+                                                    (sellVoltageHighestChargerL4);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageHighestFbL3 = (int) (bit64 & 0x01);//单体电压超高-回馈-3级
+                                            int sellVoltageHighestFbL3 = (int) (bit64 & 0x01);
+                                            //单体电压超高-回馈-3级
                                             bms.setSellVolHighestFbl3(sellVoltageHighestFbL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageHighestL3 = (int) (bit64 & 0x01);//单体电压超高-3级
+                                            int sellVoltageHighestL3 = (int) (bit64 & 0x01);
+                                            //单体电压超高-3级
                                             bms.setSellVolHighestL3(sellVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageHighestChargerL4 = (int) (bit64 & 0x01);//总电压超高-充电-4级
-                                            bms.setTotalVolHighestChargerl4(totalVoltageHighestChargerL4);
+                                            int totalVoltageHighestChargerL4 = (int) (bit64 &
+                                                    0x01);//总电压超高-充电-4级
+                                            bms.setTotalVolHighestChargerl4
+                                                    (totalVoltageHighestChargerL4);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageHighestFbL3 = (int) (bit64 & 0x01);//总电压超高-回馈-3级
+                                            int totalVoltageHighestFbL3 = (int) (bit64 & 0x01);
+                                            //总电压超高-回馈-3级
                                             bms.setTotalVolHighestFbl3(totalVoltageHighestFbL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageHighestL3 = (int) (bit64 & 0x01);//总电压超高-3级
+                                            int totalVoltageHighestL3 = (int) (bit64 & 0x01);
+                                            //总电压超高-3级
                                             bms.setTotalVolHighestl3(totalVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowerL1 = (int) (bit64 & 0x01);//单体电压过低-1级降功率
+                                            int sellVoltageLowerL1 = (int) (bit64 & 0x01);
+                                            //单体电压过低-1级降功率
                                             bms.setSellVolLowerl1(sellVoltageLowerL1);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowerL2 = (int) (bit64 & 0x01);//单体电压过低-2级降功率
+                                            int sellVoltageLowerL2 = (int) (bit64 & 0x01);
+                                            //单体电压过低-2级降功率
                                             bms.setSellVolLowerl2(sellVoltageLowerL2);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowerL3 = (int) (bit64 & 0x01);//单体电压过低-3级降功率
+                                            int sellVoltageLowerL3 = (int) (bit64 & 0x01);
+                                            //单体电压过低-3级降功率
                                             bms.setSellVolLowerl3(sellVoltageLowerL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowerL1 = (int) (bit64 & 0x01);//总电压过低-1级降功率
+                                            int totalVoltageLowerL1 = (int) (bit64 & 0x01);
+                                            //总电压过低-1级降功率
                                             bms.setTotalVolLowerl1(totalVoltageLowerL1);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowerL2 = (int) (bit64 & 0x01);//总电压过低-2级降功率
+                                            int totalVoltageLowerL2 = (int) (bit64 & 0x01);
+                                            //总电压过低-2级降功率
                                             bms.setTotalVolLowerl2(totalVoltageLowerL2);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowerL3 = (int) (bit64 & 0x01);//总电压过低-3级降功率
+                                            int totalVoltageLowerL3 = (int) (bit64 & 0x01);
+                                            //总电压过低-3级降功率
                                             bms.setTotalVolLowerl3(totalVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowestL3 = (int) (bit64 & 0x01);//单体电压超低-3级
+                                            int sellVoltageLowestL3 = (int) (bit64 & 0x01);
+                                            //单体电压超低-3级
                                             bms.setSellVolLowestl3(sellVoltageLowestL3);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowestL4 = (int) (bit64 & 0x01);//单体电压超低-4级
+                                            int sellVoltageLowestL4 = (int) (bit64 & 0x01);
+                                            //单体电压超低-4级
                                             bms.setSellVolLowestl4(sellVoltageLowestL4);
                                             bit64 = bit64 >> 1;
-                                            int sellVoltageLowestCharger = (int) (bit64 & 0x01);//单体电压超低-充电
+                                            int sellVoltageLowestCharger = (int) (bit64 & 0x01);
+                                            //单体电压超低-充电
                                             bms.setSellVolLowestCharger(sellVoltageLowestCharger);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowestL3 = (int) (bit64 & 0x01);//总电压超低-3级
+                                            int totalVoltageLowestL3 = (int) (bit64 & 0x01);
+                                            //总电压超低-3级
                                             bms.setTotalVolLowerl3(totalVoltageHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowestL4 = (int) (bit64 & 0x01);//总电压超低-4级
+                                            int totalVoltageLowestL4 = (int) (bit64 & 0x01);
+                                            //总电压超低-4级
                                             bms.setTotalVolLowestl4(totalVoltageLowestL4);
                                             bit64 = bit64 >> 1;
-                                            int totalVoltageLowestCharger = (int) (bit64 & 0x01);//总电压超低-充电
+                                            int totalVoltageLowestCharger = (int) (bit64 & 0x01);
+                                            //总电压超低-充电
                                             bms.setTotalVolLowestCharger(totalVoltageLowestCharger);
                                             bit64 = bit64 >> 1;
-                                            int voltagePlusBiggerL1 = (int) (bit64 & 0x01);//压差过大-1级降功率
+                                            int voltagePlusBiggerL1 = (int) (bit64 & 0x01);
+                                            //压差过大-1级降功率
                                             bms.setVolPlusBiggerl1(voltagePlusBiggerL1);
                                             bit64 = bit64 >> 1;
-                                            int voltagePlusBiggerL2 = (int) (bit64 & 0x01);//压差过大-2级降功率
+                                            int voltagePlusBiggerL2 = (int) (bit64 & 0x01);
+                                            //压差过大-2级降功率
                                             bms.setVolPlusBiggerl2(voltagePlusBiggerL2);
                                             bit64 = bit64 >> 1;
-                                            int voltagePlusBiggerL3 = (int) (bit64 & 0x01);//压差过大-3级降功率
+                                            int voltagePlusBiggerL3 = (int) (bit64 & 0x01);
+                                            //压差过大-3级降功率
                                             bms.setVolPlusBiggerl3(voltagePlusBiggerL3);
                                             bit64 = bit64 >> 1;
                                             int socLowerL1 = (int) (bit64 & 0x01);//SOC过低-1级降功率
@@ -3533,37 +4192,54 @@ public class DataParserD2s implements IDataParser {
                                             int socLowerL3 = (int) (bit64 & 0x01);//SOC过低-3级降功率
                                             bms.setSocLowerl3(socLowerL3);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggerL1 = (int) (bit64 & 0x01);//放电电流过大-1级降功率
-                                            bms.setDischargerCurrentBiggerl1(dischargerCurrentBiggerL1);
+                                            int dischargerCurrentBiggerL1 = (int) (bit64 & 0x01);
+                                            //放电电流过大-1级降功率
+                                            bms.setDischargerCurrentBiggerl1
+                                                    (dischargerCurrentBiggerL1);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggerL2 = (int) (bit64 & 0x01);//放电电流过大-2级降功率
-                                            bms.setDischargerCurrentBiggerl2(dischargerCurrentBiggerL2);
+                                            int dischargerCurrentBiggerL2 = (int) (bit64 & 0x01);
+                                            //放电电流过大-2级降功率
+                                            bms.setDischargerCurrentBiggerl2
+                                                    (dischargerCurrentBiggerL2);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggerL3 = (int) (bit64 & 0x01);//放电电流过大-3级降功率
-                                            bms.setDischargerCurrentBiggerl3(dischargerCurrentBiggerL3);
+                                            int dischargerCurrentBiggerL3 = (int) (bit64 & 0x01);
+                                            //放电电流过大-3级降功率
+                                            bms.setDischargerCurrentBiggerl3
+                                                    (dischargerCurrentBiggerL3);
                                             bit64 = bit64 >> 1;
-                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01);//放电电流超大-3级
-                                            bms.setDischargerCurrentBiggestl3(dischargerCurrentBiggestL3);
+                                            int dischargerCurrentBiggestL3 = (int) (bit64 & 0x01)
+                                                    ;//放电电流超大-3级
+                                            bms.setDischargerCurrentBiggestl3
+                                                    (dischargerCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
-                                            int chargerCurrentBiggestL3 = (int) (bit64 & 0x01);//充电电流超大-3级
+                                            int chargerCurrentBiggestL3 = (int) (bit64 & 0x01);
+                                            //充电电流超大-3级
                                             bms.setChargerCurrentBiggestl3(chargerCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
-                                            int chargerCurrentBiggestL4 = (int) (bit64 & 0x01);//充电电流超大-4级
+                                            int chargerCurrentBiggestL4 = (int) (bit64 & 0x01);
+                                            //充电电流超大-4级
                                             bms.setChargerCurrentBiggestl4(chargerCurrentBiggestL4);
                                             bit64 = bit64 >> 1;
-                                            int feedBackCurrentBiggestL3 = (int) (bit64 & 0x01);//回馈电流超大-3级
-                                            bms.setFeedbackCurrentBiggestl3(feedBackCurrentBiggestL3);
+                                            int feedBackCurrentBiggestL3 = (int) (bit64 & 0x01);
+                                            //回馈电流超大-3级
+                                            bms.setFeedbackCurrentBiggestl3
+                                                    (feedBackCurrentBiggestL3);
                                             bit64 = bit64 >> 1;
-                                            int feedBackCurrentBiggestL4 = (int) (bit64 & 0x01);//回馈电流超大-4级
-                                            bms.setFeedbackCurrentBiggestl4(feedBackCurrentBiggestL4);
+                                            int feedBackCurrentBiggestL4 = (int) (bit64 & 0x01);
+                                            //回馈电流超大-4级
+                                            bms.setFeedbackCurrentBiggestl4
+                                                    (feedBackCurrentBiggestL4);
                                             bit64 = bit64 >> 1;
-                                            int tempratureHigherL1 = (int) (bit64 & 0x01);//温度过高-1级降功率
+                                            int tempratureHigherL1 = (int) (bit64 & 0x01);
+                                            //温度过高-1级降功率
                                             bms.setTempratureHigherl1(tempratureHigherL1);
                                             bit64 = bit64 >> 1;
-                                            int tempratureHigherL2 = (int) (bit64 & 0x01);//温度过高-2级降功率
+                                            int tempratureHigherL2 = (int) (bit64 & 0x01);
+                                            //温度过高-2级降功率
                                             bms.setTempratureHigherl2(tempratureHigherL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureHigherL3 = (int) (bit64 & 0x01);//温度过高-3级降功率
+                                            int tempratureHigherL3 = (int) (bit64 & 0x01);
+                                            //温度过高-3级降功率
                                             bms.setTempratureHigherl3(tempratureHigherL3);
                                             bit64 = bit64 >> 1;
                                             int tempratureHighestL3 = (int) (bit64 & 0x01);//温度超高-3级
@@ -3572,35 +4248,46 @@ public class DataParserD2s implements IDataParser {
                                             int tempratureHighestL4 = (int) (bit64 & 0x01);//温度超高-4级
                                             bms.setTempratureHighestl4(tempratureHighestL4);
                                             bit64 = bit64 >> 1;
-                                            int heatMoTempratureHighest = (int) (bit64 & 0x01);//加热膜温度超高
+                                            int heatMoTempratureHighest = (int) (bit64 & 0x01);
+                                            //加热膜温度超高
                                             bms.setHeatMoTempratureHighest(heatMoTempratureHighest);
                                             bit64 = bit64 >> 1;
-                                            int tempratureLowerL1 = (int) (bit64 & 0x01);//温度过低-1级降功率
+                                            int tempratureLowerL1 = (int) (bit64 & 0x01);
+                                            //温度过低-1级降功率
                                             bms.setTempLowerl1(tempratureLowerL1);
                                             bit64 = bit64 >> 1;
-                                            int tempratureLowerL2 = (int) (bit64 & 0x01);//温度过低-2级降功率
+                                            int tempratureLowerL2 = (int) (bit64 & 0x01);
+                                            //温度过低-2级降功率
                                             bms.setTempLowerl2(tempratureHigherL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureLowerL3 = (int) (bit64 & 0x01);//温度过低-3级降功率
+                                            int tempratureLowerL3 = (int) (bit64 & 0x01);
+                                            //温度过低-3级降功率
                                             bms.setTempLowerl3(tempratureLowerL3);
                                             bit64 = bit64 >> 1;
                                             int tempratureLowestL3 = (int) (bit64 & 0x01);//温度超低-3级
                                             bms.setTempLowestl3(tempratureHighestL3);
                                             bit64 = bit64 >> 1;
-                                            int tempraturePlusHigherL1 = (int) (bit64 & 0x01);//温差过高-1级降功率
+                                            int tempraturePlusHigherL1 = (int) (bit64 & 0x01);
+                                            //温差过高-1级降功率
                                             bms.setTempPlusHigherl1(tempraturePlusHigherL1);
                                             bit64 = bit64 >> 1;
-                                            int tempraturePlusHigherL2 = (int) (bit64 & 0x01);//温差过高-2级降功率
+                                            int tempraturePlusHigherL2 = (int) (bit64 & 0x01);
+                                            //温差过高-2级降功率
                                             bms.setTempPlusHigherl2(tempraturePlusHigherL2);
                                             bit64 = bit64 >> 1;
-                                            int tempraturePlusHigherL3 = (int) (bit64 & 0x01);//温差过高-3级降功率
+                                            int tempraturePlusHigherL3 = (int) (bit64 & 0x01);
+                                            //温差过高-3级降功率
                                             bms.setTempPlusHigherl3(tempraturePlusHigherL3);
                                             bit64 = bit64 >> 1;
-                                            int tempratureRiseSpeedBiggerL2 = (int) (bit64 & 0x01);//温升速率过高-2级降功率
-                                            bms.setTempRiseSpeedBiggerl2(tempratureRiseSpeedBiggerL2);
+                                            int tempratureRiseSpeedBiggerL2 = (int) (bit64 &
+                                                    0x01);//温升速率过高-2级降功率
+                                            bms.setTempRiseSpeedBiggerl2
+                                                    (tempratureRiseSpeedBiggerL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureRiseSpeedBiggestL4 = (int) (bit64 & 0x01);//温升速率超高-4级
-                                            bms.setTempRiseSpeedBiggestl4(tempratureRiseSpeedBiggestL4);
+                                            int tempratureRiseSpeedBiggestL4 = (int) (bit64 &
+                                                    0x01);//温升速率超高-4级
+                                            bms.setTempRiseSpeedBiggestl4
+                                                    (tempratureRiseSpeedBiggestL4);
                                             bit64 = bit64 >> 1;
                                             int insuLowL1 = (int) (bit64 & 0x01);//绝缘过低-1级
                                             bms.setInsuLowl1(insuLowL1);
@@ -3623,16 +4310,20 @@ public class DataParserD2s implements IDataParser {
                                             int chargerNetErr = (int) (bit64 & 0x01);//与充电机通讯故障
                                             bms.setChargerNetErr(chargerNetErr);
                                             bit64 = bit64 >> 1;
-                                            int voltageDisconnectL4 = (int) (bit64 & 0x01);//电压采集断开-4级
+                                            int voltageDisconnectL4 = (int) (bit64 & 0x01);
+                                            //电压采集断开-4级
                                             bms.setVolDisconnectl4(voltageDisconnectL4);
                                             bit64 = bit64 >> 1;
-                                            int voltageDisconnectL2 = (int) (bit64 & 0x01);//电压采集断开-2级降功率
+                                            int voltageDisconnectL2 = (int) (bit64 & 0x01);
+                                            //电压采集断开-2级降功率
                                             bms.setVolDisconnectl2(voltageDisconnectL2);
                                             bit64 = bit64 >> 1;
-                                            int tempratureDisconnectL4 = (int) (bit64 & 0x01);//温度采集断开-4级
+                                            int tempratureDisconnectL4 = (int) (bit64 & 0x01);
+                                            //温度采集断开-4级
                                             bms.setTempDisconnectl4(tempratureDisconnectL4);
                                             bit64 = bit64 >> 1;
-                                            int tempratureDisconnectL2 = (int) (bit64 & 0x01);//温度采集断开-2级降功率
+                                            int tempratureDisconnectL2 = (int) (bit64 & 0x01);
+                                            //温度采集断开-2级降功率
                                             bms.setTempDisconnectl2(tempratureDisconnectL2);
                                             bit64 = bit64 >> 1;
                                             int heatErr = (int) (bit64 & 0x01);//加热故障
@@ -3647,7 +4338,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x04C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("探头温度[0x04C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("探头温度[0x04C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int temprature1 = (int) (bit64 & 0xFF) - 40;//1#探头温度
 
                                             tempratureArray[0] = temprature1;
@@ -3675,7 +4367,8 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x08C000F4) {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("探头温度[0x08C000F4]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("探头温度[0x08C000F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int temprature9 = (int) (bit64 & 0xFF) - 40;//9#探头温度
                                             tempratureArray[8] = temprature9;
                                             bit64 = bit64 >>> 8;
@@ -3694,13 +4387,18 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x1806E5F4) {//BMS_charger
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_charger[0x1806E5F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float alowableVoltage = (float) ((bit64 & 0xFFFF) * 0.1f);//最高允许充电端电压
-                                            alowableVoltage = BigDecimal.valueOf(alowableVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("BMS_charger[0x1806E5F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float alowableVoltage = (float) ((bit64 & 0xFFFF) *
+                                                    0.1f);//最高允许充电端电压
+                                            alowableVoltage = BigDecimal.valueOf(alowableVoltage)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             bms.setAlowableVoltage(alowableVoltage);
                                             bit64 = bit64 >>> 16;
-                                            float alowableCurrent = (float) ((bit64 & 0xFFFF) * 0.1f);//最高允许充电电流
-                                            alowableCurrent = BigDecimal.valueOf(alowableCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float alowableCurrent = (float) ((bit64 & 0xFFFF) *
+                                                    0.1f);//最高允许充电电流
+                                            alowableCurrent = BigDecimal.valueOf(alowableCurrent)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             bms.setAlowableCurrent(alowableCurrent);
                                             bit64 = bit64 >>> 16;
                                             int isableCharge = (int) (bit64 & 0xFF);//
@@ -3719,39 +4417,51 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x18FF01F4) {//BMS_power
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_power[0x18FF01F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int discharge10sPower = (int) (bit64 & 0xFFFF);//动力电池包 10s 最大充电功率
+                                            D2sDataPackUtil.debug("BMS_power[0x18FF01F4]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            int discharge10sPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包 10s 最大充电功率
                                             bms.setDischarge10SPower(discharge10sPower);
                                             bit64 = bit64 >> 16;
-                                            int discharge30sPower = (int) (bit64 & 0xFFFF);//动力电池包 30s 最大放电功率\
+                                            int discharge30sPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包 30s 最大放电功率\
                                             bms.setDischarge30SPower(discharge30sPower);
                                             bit64 = bit64 >> 16;
-                                            int dischargeMaximumPower = (int) (bit64 & 0xFFFF);//动力电池包持续最大放电功率
+                                            int dischargeMaximumPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包持续最大放电功率
                                             bms.setDischargeMaximumPower(dischargeMaximumPower);
                                             bit64 = bit64 >> 16;
-                                            int dischargeMaximumCurrent = (int) (bit64 & 0xFFFF);//动力电池包最大放电电流限值
+                                            int dischargeMaximumCurrent = (int) (bit64 & 0xFFFF);
+                                            //动力电池包最大放电电流限值
                                             bms.setDischargeMaximumCurrent(dischargeMaximumCurrent);
                                             bit64 = bit64 >> 16;
                                         } else if (canId == (int) 0x18FF02F4) {//BMS_chargerpower
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("BMS_chargerpower[0x18FF02F4]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int charge10sPower = (int) (bit64 & 0xFFFF);//动力电池包 10s 最大充电功率
+                                            D2sDataPackUtil.debug
+                                                    ("BMS_chargerpower[0x18FF02F4]--->" + ByteBufUtil
+                                                            .hexDump(canBuffer));
+                                            int charge10sPower = (int) (bit64 & 0xFFFF);//动力电池包
+                                            // 10s 最大充电功率
                                             bms.setCharge10SPower(charge10sPower);
                                             bit64 = bit64 >> 16;
-                                            int charge30sPower = (int) (bit64 & 0xFFFF);//动力电池包 30s 最大充电功率
+                                            int charge30sPower = (int) (bit64 & 0xFFFF);//动力电池包
+                                            // 30s 最大充电功率
                                             bms.setCharge30SPower(charge30sPower);
                                             bit64 = bit64 >> 16;
-                                            int chargeMaximumPower = (int) (bit64 & 0xFFFF);//动力电池包持续最大充电功率\
+                                            int chargeMaximumPower = (int) (bit64 & 0xFFFF);
+                                            //动力电池包持续最大充电功率\
                                             bms.setChargeMaximumPower(chargeMaximumPower);
                                             bit64 = bit64 >> 16;
-                                            int chargeMaximumCurrent = (int) (bit64 & 0xFFFF) - 350;//动力电池包最大充电电流限值
+                                            int chargeMaximumCurrent = (int) (bit64 & 0xFFFF) -
+                                                    350;//动力电池包最大充电电流限值
                                             bms.setChargeMaximumCurrent(chargeMaximumCurrent);
                                             bit64 = bit64 >> 16;
                                         } else if (canId == (int) 0x0CF11F05) {// MC_VMS1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("MC_VMS1[0x0CF11F05]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("MC_VMS1[0x0CF11F05]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int muStatus = (int) (bit64 & 0x03);//电机控制器状态
                                             mc.setMuStatus(muStatus);
                                             bit64 = bit64 >> 2;
@@ -3764,8 +4474,10 @@ public class DataParserD2s implements IDataParser {
                                             int voltageStatus = (int) (bit64 & 0x03);//母线电压状态
                                             mc.setVoltageStatus(voltageStatus);
                                             bit64 = bit64 >> 2;
-                                            float voltageRange = (float) (bit64 & 0xFF) * 0.5f;//母线电压
-                                            voltageRange = BigDecimal.valueOf(voltageRange).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float voltageRange = (float) (bit64 & 0xFF) * 0.5f;
+                                            //母线电压
+                                            voltageRange = BigDecimal.valueOf(voltageRange)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             mc.setVoltageRange(voltageRange);
                                             bit64 = bit64 >> 8;
                                             int motorTemprature = (int) (bit64 & 0xFF) - 40;//电机温度
@@ -3777,13 +4489,16 @@ public class DataParserD2s implements IDataParser {
                                             int motorRpm = (int) (bit64 & 0xFFFF);//电机转速
                                             mc.setMotorRpm(motorRpm);
                                             bit64 = bit64 >> 16;
-                                            float motorCurrent = (float) (bit64 & 0xFFFF) * 0.5f;//电机相电流
-                                            motorCurrent = BigDecimal.valueOf(motorCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float motorCurrent = (float) (bit64 & 0xFFFF) * 0.5f;
+                                            //电机相电流
+                                            motorCurrent = BigDecimal.valueOf(motorCurrent)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             mc.setMotorCurrent(motorCurrent);
                                         } else if (canId == (int) 0x0CF12F05) {// MC_Info1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("MC_Info1[0x0CF12F05]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("MC_Info1[0x0CF12F05]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int aprRate = (int) (bit64 & 0xFF);//加速踏板开度
                                             mc.setAprRate(aprRate);
                                             bit64 = bit64 >>> 8;
@@ -3827,23 +4542,28 @@ public class DataParserD2s implements IDataParser {
                                         } else if (canId == (int) 0x0CF13F05) {//MC_Error
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("MC_Error[0x0CF13F05]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            int buscurrentSensorError = (int) (bit64 & 0x01);//母线电流传感器故障
+                                            D2sDataPackUtil.debug("MC_Error[0x0CF13F05]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            int buscurrentSensorError = (int) (bit64 & 0x01);
+                                            //母线电流传感器故障
                                             mc.setBusCurrentSensorError(buscurrentSensorError);
                                             bit64 = bit64 >>> 1;
-                                            int phaseCurrentSensorError = (int) (bit64 & 0x01);//相线电流传感器故障
+                                            int phaseCurrentSensorError = (int) (bit64 & 0x01);
+                                            //相线电流传感器故障
                                             mc.setPhaseCurrentSensorError(phaseCurrentSensorError);
                                             bit64 = bit64 >>> 1;
                                             int busVolSensorError = (int) (bit64 & 0x01);//母线电压传感器故障
                                             mc.setBusVolSensorError(buscurrentSensorError);
                                             bit64 = bit64 >>> 1;
-                                            int controlTempSensorError = (int) (bit64 & 0x01);//控制器温度传感器故障
+                                            int controlTempSensorError = (int) (bit64 & 0x01);
+                                            //控制器温度传感器故障
                                             mc.setControlTempSensorError(controlTempSensorError);
                                             bit64 = bit64 >>> 1;
                                             int mTempSensorError = (int) (bit64 & 0x01);//电机温度传感器故障
                                             mc.setmTempSensorError(mTempSensorError);
                                             bit64 = bit64 >>> 1;
-                                            int rotaryTransformerError = (int) (bit64 & 0x01);//旋转变压器故障
+                                            int rotaryTransformerError = (int) (bit64 & 0x01);
+                                            //旋转变压器故障
                                             mc.setRotaryTransformerError(rotaryTransformerError);
                                             bit64 = bit64 >>> 1;
                                             int controlTempError = (int) (bit64 & 0x01);//控制器温度报警
@@ -3873,7 +4593,8 @@ public class DataParserD2s implements IDataParser {
                                             int busUpdervolError = (int) (bit64 & 0x01);//母线欠压故障
                                             mc.setBusUpdervolError(busUpdervolError);
                                             bit64 = bit64 >>> 1;
-                                            int controlUpdervolError = (int) (bit64 & 0x01);//控制电欠压故障
+                                            int controlUpdervolError = (int) (bit64 & 0x01);
+                                            //控制电欠压故障
                                             mc.setControlUpdervolError(controlUpdervolError);
                                             bit64 = bit64 >>> 1;
                                             int controlOutvolError = (int) (bit64 & 0x01);//控制电过压故障
@@ -3891,10 +4612,12 @@ public class DataParserD2s implements IDataParser {
                                             int perchargeError = (int) (bit64 & 0x01);//预充电故障
                                             mc.setPerchargeError(perchargeError);
                                             bit64 = bit64 >>> 1;
-                                            int pedalPersamplingError = (int) (bit64 & 0x01);//加速踏板预采样故障
+                                            int pedalPersamplingError = (int) (bit64 & 0x01);
+                                            //加速踏板预采样故障
                                             mc.setPedalPersamplingError(pedalPersamplingError);
                                             bit64 = bit64 >>> 1;
-                                            int canCommunicatioonError = (int) (bit64 & 0x01);//CAN总线通讯故障
+                                            int canCommunicatioonError = (int) (bit64 & 0x01);
+                                            //CAN总线通讯故障
                                             mc.setCanCommunicationError(canCommunicatioonError);
                                             bit64 = bit64 >>> 1;
                                             int errorLevel = (int) (bit64 & 0x07);//故障等级
@@ -3907,19 +4630,25 @@ public class DataParserD2s implements IDataParser {
                                             mc.setPowerOutStatus(powerOutStatus);
                                             bit64 = bit64 >>> 2;
                                             bit64 = bit64 >>> 26;
-                                            String supplierCode = Integer.toBinaryString((int) (bit64 & 0xFF));//供应商配置代码
+                                            String supplierCode = Integer.toBinaryString((int)
+                                                    (bit64 & 0xFF));//供应商配置代码
                                             mc.setSupplierCode(supplierCode);
 
                                         } else if (canId == (int) 0x18FF50E5) {//obc CHARGER_BMS
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("CHARGER_BMS[0x18FF50E5]--->" + ByteBufUtil.hexDump(canBuffer));
-                                            float outVoltage = (float) ((bit64 & 0xFFFF) * 0.1f);//充电机输出电压
-                                            outVoltage = BigDecimal.valueOf(outVoltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            D2sDataPackUtil.debug("CHARGER_BMS[0x18FF50E5]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
+                                            float outVoltage = (float) ((bit64 & 0xFFFF) * 0.1f);
+                                            //充电机输出电压
+                                            outVoltage = BigDecimal.valueOf(outVoltage).setScale
+                                                    (1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setOutVoltage(outVoltage);
                                             bit64 = bit64 >> 16;
-                                            float outCurrent = (float) ((bit64 & 0xFFFF) * 0.1f);//充电机输出电流
-                                            outCurrent = BigDecimal.valueOf(outCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            float outCurrent = (float) ((bit64 & 0xFFFF) * 0.1f);
+                                            //充电机输出电流
+                                            outCurrent = BigDecimal.valueOf(outCurrent).setScale
+                                                    (1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setOutCurrent(outCurrent);
                                             bit64 = bit64 >> 16;
                                             int isHardErr = (int) (bit64 & 0x01);//硬件故障
@@ -3943,11 +4672,13 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             int inputVoltage = (int) (bit64 & 0x01FF);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("ObcSt1[0x18FF51E5]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("ObcSt1[0x18FF51E5]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             obc.setInVoltage((float) inputVoltage);
                                             bit64 = bit64 >> 9;
                                             float inputCurrent = (bit64 & 0x01FF) * 0.1f;
-                                            inputCurrent = BigDecimal.valueOf(inputCurrent).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            inputCurrent = BigDecimal.valueOf(inputCurrent)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setInCurrent(inputCurrent);
                                             bit64 = bit64 >> 9;
                                             int pfcVoltage = (int) (bit64 & 0x01FF);
@@ -3956,24 +4687,28 @@ public class DataParserD2s implements IDataParser {
                                             // reserve
                                             bit64 = bit64 >> 5;
                                             float dv12Voltage = (bit64 & 0xFF) * 0.1f;
-                                            dv12Voltage = BigDecimal.valueOf(dv12Voltage).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            dv12Voltage = BigDecimal.valueOf(dv12Voltage)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setV12Voltage(dv12Voltage);
                                             bit64 = bit64 >> 8;
                                             float dv12Current = (bit64 & 0x3F) * 0.1f;
-                                            dv12Current = BigDecimal.valueOf(dv12Current).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            dv12Current = BigDecimal.valueOf(dv12Current)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
                                             obc.setV12Current(dv12Current);
                                             bit64 = bit64 >> 6;
                                             // reserve
                                             bit64 = bit64 >> 2;
                                             float outPowerLevel = (bit64 & 0xFF) * 0.1f;
-                                            outPowerLevel = BigDecimal.valueOf(outPowerLevel).setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                            outPowerLevel = BigDecimal.valueOf(outPowerLevel)
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
 
                                             bit64 = bit64 >> 8;
                                             int outCurrentLevel = (int) (bit64 & 0x3F);
                                         } else if (canId == (int) 0x18FF52E5) {//OBC_St2
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
-                                            D2sDataPackUtil.debug("OBC_St2[0x18FF52E5]--->" + ByteBufUtil.hexDump(canBuffer));
+                                            D2sDataPackUtil.debug("OBC_St2[0x18FF52E5]--->" +
+                                                    ByteBufUtil.hexDump(canBuffer));
                                             int temp1 = (int) ((bit64 & 0xFF) - 50);//温度1
                                             obc.setTemprature1(temp1);
                                             bit64 = bit64 >>> 8;
@@ -4014,13 +4749,18 @@ public class DataParserD2s implements IDataParser {
                                             int pfcErr = (int) (bit64 & 0x01);//PFC电压异常
                                             obc.setPfcVolError(pfcErr);
                                             bit64 = bit64 >>> 1;
-                                            int charger12DcHighErr = (int) (bit64 & 0x01);//充电机12V过压异常
+                                            int charger12DcHighErr = (int) (bit64 & 0x01);
+                                            //充电机12V过压异常
                                             obc.setV12OutvolError(charger12DcHighErr);
                                             bit64 = bit64 >>> 1;
-                                            int charger12DcLowErr = (int) (bit64 & 0x01);//充电机12V欠压异常
+                                            int charger12DcLowErr = (int) (bit64 & 0x01);
+                                            //充电机12V欠压异常
                                             obc.setV12UpdervolError(charger12DcLowErr);
                                         } else {
-                                            System.out.println("Unsupport packet,canId=" + canId + ",buf=" + ByteBufUtil.hexDump(canBuffer));
+                                            System.out.println("Unsupport packet,canId=" + canId
+                                                    + ",buf=" + ByteBufUtil.hexDump(canBuffer));
+                                            System.out.println("Unsupport packet,canId=" + canId
+                                                    + ",buf=" + ByteBufUtil.hexDump(canAllBuffer));
                                         }
                                     }
                                     /*==========add===========*/
@@ -4059,8 +4799,10 @@ public class DataParserD2s implements IDataParser {
                         byte[] logOuttimeBuf = new byte[6];
                         buffer.readBytes(logOuttimeBuf);
                         //数据采集时间
-                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date(logOuttimeBuf, 0)));
-                        //  dataPackLogout.setReceiveTime(new Date(D2sDataPackUtil.buf2Date(logOuttimeBuf, 0)));
+                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date
+                                (logOuttimeBuf, 0)));
+                        //  dataPackLogout.setReceiveTime(new Date(D2sDataPackUtil.buf2Date
+                        // (logOuttimeBuf, 0)));
                         //设置车辆vin码
                         //   dataPackLogout.setVin(iccid);
                         //登出流水号
@@ -4079,7 +4821,8 @@ public class DataParserD2s implements IDataParser {
                         //设置检验时间
                         byte[] alarmtimeBuf = new byte[6];
                         buffer.readBytes(alarmtimeBuf);
-                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date(alarmtimeBuf, 0)));
+                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date
+                                (alarmtimeBuf, 0)));
 
                         if ((msgLength - 6) == 4 || (msgLength - 6) == 3) {
                             byte alarmId = buffer.readByte();
@@ -4088,8 +4831,10 @@ public class DataParserD2s implements IDataParser {
                                 List<DataPackAlarm.Alarm> alarmList = new ArrayList<>();
                                 //车辆vin码
                                 //      dataPackAlarm.setVin(iccid);
-                                alarmList.add(new DataPackAlarm.Alarm("automaticActivation", buffer.readByte() & 0xFF, "1：自动报警 2：人工报警"));
-                                alarmList.add(new DataPackAlarm.Alarm("testCall", buffer.readByte() & 0xFF, "0：紧急报警 1：呼叫测试"));
+                                alarmList.add(new DataPackAlarm.Alarm("automaticActivation",
+                                        buffer.readByte() & 0xFF, "1：自动报警 2：人工报警"));
+                                alarmList.add(new DataPackAlarm.Alarm("testCall", buffer.readByte
+                                        () & 0xFF, "0：紧急报警 1：呼叫测试"));
                                 dataPackAlarm.setAlarmList(alarmList);
                                 //--add
                                 dataPackTargetList.add(new DataPackTarget(dataPackAlarm));
@@ -4099,11 +4844,14 @@ public class DataParserD2s implements IDataParser {
                                 //车辆vin码
                                 //     dataPackAlarm.setVin(iccid);
                                 //X 轴加速度值：Resolution：0.1；Offset:0；Min:0；Max:25.5；Invalid:0；Unit:m/s2
-                                alarmList.add(new DataPackAlarm.Alarm("X-Acceleration", buffer.readByte() & 0xFF, "X轴加速度值"));
+                                alarmList.add(new DataPackAlarm.Alarm("X-Acceleration", buffer
+                                        .readByte() & 0xFF, "X轴加速度值"));
                                 //Y 轴加速度值：Resolution：0.1；Offset:0；Min:0；Max:25.5；Invalid:0；Unit:m/s2
-                                alarmList.add(new DataPackAlarm.Alarm("Y-Acceleration", buffer.readByte() & 0xFF, "Y轴加速度值"));
+                                alarmList.add(new DataPackAlarm.Alarm("Y-Acceleration", buffer
+                                        .readByte() & 0xFF, "Y轴加速度值"));
                                 //Z 轴加速度值：Resolution：0.1；Offset:0；Min:0；Max:25.5；Invalid:0；Unit:m/s2
-                                alarmList.add(new DataPackAlarm.Alarm("Z-Acceleration", buffer.readByte() & 0xFF, "Z轴加速度值"));
+                                alarmList.add(new DataPackAlarm.Alarm("Z-Acceleration", buffer
+                                        .readByte() & 0xFF, "Z轴加速度值"));
                                 dataPackAlarm.setAlarmList(alarmList);
                                 //--add
                                 dataPackTargetList.add(new DataPackTarget(dataPackAlarm));
@@ -4117,7 +4865,8 @@ public class DataParserD2s implements IDataParser {
                         //设置检验时间
                         byte[] tboxTimeBuf = new byte[6];
                         buffer.readBytes(tboxTimeBuf);
-                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date(tboxTimeBuf, 0)));
+                        dataPackObject.setDetectionTime(new Date(D2sDataPackUtil.buf2Date
+                                (tboxTimeBuf, 0)));
                         //包体数据
                         byte[] tboxStatusBuf = new byte[msgLength - 6];
                         buffer.readBytes(tboxStatusBuf);
@@ -4129,21 +4878,28 @@ public class DataParserD2s implements IDataParser {
                             while (index < (msgLength - 6) && limit++ < 100) {
                                 if (tboxStatusBuf[index] == (byte) 0x01) { // 电源状态
                                     statusList.add(new DataPackStatus.Status("电源状态标志",
-                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：电源故障 1：电源正常"));
+                                            DatatypeConverter.printHexBinary(new
+                                                    byte[]{tboxStatusBuf[index + 1]}), "0：电源故障 1：电源正常"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x02) { // 通电状态
                                     statusList.add(new DataPackStatus.Status("通电状态标志",
-                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：断电 1：通电"));
+                                            DatatypeConverter.printHexBinary(new
+                                                    byte[]{tboxStatusBuf[index + 1]}), "0：断电 1：通电"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x03) { // 通信传输状态
                                     statusList.add(new DataPackStatus.Status("通信传输状态标志",
-                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：通信传输异常 1：通信传输正常"));
+                                            DatatypeConverter.printHexBinary(new
+                                                    byte[]{tboxStatusBuf[index + 1]}), "0：通信传输异常 " +
+                                            "1：通信传输正常"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x80) { // Wifi共享状态
                                     statusList.add(new DataPackStatus.Status("Wifi共享状态",
-                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 1]}), "0：未开启共享 1：开启wifi共享"));
+                                            DatatypeConverter.printHexBinary(new
+                                                    byte[]{tboxStatusBuf[index + 1]}), "0：未开启共享 " +
+                                            "1：开启wifi共享"));
                                     statusList.add(new DataPackStatus.Status("当前共享wifi设备数",
-                                            DatatypeConverter.printHexBinary(new byte[]{tboxStatusBuf[index + 2]}), "0~255"));
+                                            DatatypeConverter.printHexBinary(new
+                                                    byte[]{tboxStatusBuf[index + 2]}), "0~255"));
                                     index += 2;
                                 } else {
                                     break;
@@ -4177,13 +4933,22 @@ public class DataParserD2s implements IDataParser {
                                 int paramLength = buffer.readByte();
                                 String paramValue;
                                 //参数值
-                                if (paramId == 0x01 || paramId == 0x02 || paramId == 0x03 || paramId == 0x06 || paramId == 0x0a || paramId == 0x0b || paramId == 0x0f || paramId == 0x82 || paramId == 0x84 || paramId == 0x85 || paramId == 0x86 || paramId == 0x87 || paramId == 0x88 || paramId == 0x89 || paramId == 0x8a || paramId == 0x8b || paramId == 0x8e) {
-                                    paramValue = Integer.toString(D2sDataPackUtil.readUInt2(buffer));
-                                } else if (paramId == 0x05 || paramId == 0x07 || paramId == 0x08 || paramId == 0x0E || paramId == 0x80 || paramId == 0x81 || paramId == 0x8D) {
+                                if (paramId == 0x01 || paramId == 0x02 || paramId == 0x03 ||
+                                        paramId == 0x06 || paramId == 0x0a || paramId == 0x0b || paramId
+                                        == 0x0f || paramId == 0x82 || paramId == 0x84 || paramId == 0x85
+                                        || paramId == 0x86 || paramId == 0x87 || paramId == 0x88 ||
+                                        paramId == 0x89 || paramId == 0x8a || paramId == 0x8b || paramId
+                                        == 0x8e) {
+                                    paramValue = Integer.toString(D2sDataPackUtil.readUInt2
+                                            (buffer));
+                                } else if (paramId == 0x05 || paramId == 0x07 || paramId == 0x08
+                                        || paramId == 0x0E || paramId == 0x80 || paramId == 0x81 ||
+                                        paramId == 0x8D) {
                                     byte[] strBuf = new byte[paramLength];
                                     buffer.readBytes(strBuf);
                                     paramValue = new String(strBuf);
-                                } else if (paramId == 0x09 || paramId == 0x0c || paramId == 0x10 || paramId == 0x83 || paramId == 0x8f) {
+                                } else if (paramId == 0x09 || paramId == 0x0c || paramId == 0x10
+                                        || paramId == 0x83 || paramId == 0x8f) {
                                     paramValue = Integer.toString(buffer.readByte());
                                 }
                             }

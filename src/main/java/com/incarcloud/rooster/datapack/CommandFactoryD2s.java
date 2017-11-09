@@ -426,8 +426,6 @@ public class CommandFactoryD2s implements CommandFactory {
                     byteList.add(time[i]);
                 }
                 //参数列表,前台传递参数设置json字符串。
-
-
                 break;
             case GET_RUN_INFO: //获取车辆运行数据
                 //命令标识-报警参数查询
