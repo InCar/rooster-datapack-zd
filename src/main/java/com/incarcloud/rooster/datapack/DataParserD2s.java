@@ -173,6 +173,7 @@ public class DataParserD2s implements IDataParser {
     @Override
     public ByteBuf createResponse(DataPack requestPack, ERespReason reason) {
         if (null != requestPack && null != reason) {
+
             // 原始数据
             byte[] dataPackBytes = validate(Base64.getDecoder().decode(requestPack.getDataB64()));
             if (null != dataPackBytes) {
@@ -202,44 +203,47 @@ public class DataParserD2s implements IDataParser {
                 int msgLength = 0;
                 byte statusCode;
 
-                // 根据msgId回复信息，否则使用通用应答
-                switch (msgId) {
-                    case 0x01: // 0x01 - 车辆登入
-                        //命令标识
-                        byteList.set(2, (byte) 0x01);
-                        //应答标识 成功
-                        byteList.set(3, (byte) 0x01);
-                        break;
-                    case 0x05:// 0x05 - 车辆登出
-                        //命令标识
-                        byteList.set(2, (byte) 0x05);
-                        //应答标识 成功
-                        byteList.set(3, (byte) 0x01);
-                        break;
-                    case 0x08:// 0x08 - 终端校时
-                        //命令标识
-                        byteList.set(2, (byte) 0x08);
-                        //应答标识 成功
-                        byteList.set(3, (byte) 0x01);
-                        break;
-                }
+                if (0x01 == msgId || 0x05 == msgId || 0x08 == msgId) {
+                    // 根据msgId回复信息，否则使用通用应答
+                    switch (msgId) {
+                        case 0x01: // 0x01 - 车辆登入
+                            //命令标识
+                            byteList.set(2, (byte) 0x01);
+                            //应答标识 成功
+                            byteList.set(3, (byte) 0x01);
+                            break;
+                        case 0x05:// 0x05 - 车辆登出
+                            //命令标识
+                            byteList.set(2, (byte) 0x05);
+                            //应答标识 成功
+                            byteList.set(3, (byte) 0x01);
+                            break;
+                        case 0x08:// 0x08 - 终端校时
+                            //命令标识
+                            byteList.set(2, (byte) 0x08);
+                            //应答标识 成功
+                            byteList.set(3, (byte) 0x01);
+                            break;
+                    }
                 /*====================end---判断msgId回复消息---end====================*/
-                //添加时间
-                byte[] time = D2sDataPackUtil.date2buf(System.currentTimeMillis());
-                for (int i = 0; i < time.length; i++) {
-                    byteList.add(time[i]);
-                }
-                //填充校验码
-                byteList.add((byte) 0xFF);
-                // add to buffer
-                byte[] responseBytes = new byte[byteList.size()];
-                for (int i = 0; i < responseBytes.length; i++) {
-                    responseBytes[i] = byteList.get(i);
-                }
-                responseBytes = D2sDataPackUtil.addCheck(responseBytes);
+                    //添加时间
+                    byte[] time = D2sDataPackUtil.date2buf(System.currentTimeMillis());
+                    for (int i = 0; i < time.length; i++) {
+                        byteList.add(time[i]);
+                    }
+                    //填充校验码
+                    byteList.add((byte) 0xFF);
+                    // add to buffer
+                    byte[] responseBytes = new byte[byteList.size()];
+                    for (int i = 0; i < responseBytes.length; i++) {
+                        responseBytes[i] = byteList.get(i);
+                    }
+                    responseBytes = D2sDataPackUtil.addCheck(responseBytes);
 
-                // return
-                return Unpooled.wrappedBuffer(responseBytes);
+                    // return
+                    return Unpooled.wrappedBuffer(responseBytes);
+                }
+                return null;
             }
         }
         return null;
@@ -417,8 +421,9 @@ public class DataParserD2s implements IDataParser {
                                     for (int i = 0; i < batteryPacketNumber; i++) {
                                         batteryVoltageList.add(new BigDecimal(((float) (
                                                 (eleBuffer[11 + i * 2] & 0xFF) << 8 |
-                                                        (eleBuffer[12 + i * 2] & 0xFF)) / 1000)).setScale
-                                                (3, BigDecimal.ROUND_HALF_UP).floatValue());
+                                                        (eleBuffer[12 + i * 2] & 0xFF)) / 1000))
+                                                .setScale
+                                                        (3, BigDecimal.ROUND_HALF_UP).floatValue());
                                     }
                                     dataPackBattery.setBatteryVoltages(batteryVoltageList);
                                     //-add
@@ -486,7 +491,8 @@ public class DataParserD2s implements IDataParser {
                                     dataPackOverview.setVehicleSpeed(vehicleSpeed);
                                     //累计里程
                                     Double mileAge = (double) ((eleBuffer[5] & 0xFF) << 24 |
-                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[8] & 0xFF)) / 10;
                                     mileAge = new BigDecimal(mileAge).setScale(1, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
@@ -590,15 +596,18 @@ public class DataParserD2s implements IDataParser {
                                     System.arraycopy(dataBuffer, index, eleBuffer, 0, length);
                                     //打印调试信息
 
-                                    D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //定位状态：0-有效定位；1-无效定位
                                     Integer isValidate = eleBuffer[0] & 0x01;
-                                    if(null != isValidate && 0 == isValidate) {
+                                    if (null != isValidate && 0 == isValidate) {
                                         // 有效定位-定位方式未知
-                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_UNKNOWN);
+                                        dataPackPosition.setPositioMode(DataPackPosition
+                                                .POSITION_MODE_UNKNOWN);
                                     } else {
                                         // 无效定位
-                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_INVALID);
+                                        dataPackPosition.setPositioMode(DataPackPosition
+                                                .POSITION_MODE_INVALID);
                                     }
 
                                     //0:北纬； 1:南纬
@@ -607,14 +616,16 @@ public class DataParserD2s implements IDataParser {
                                     Integer lngType = eleBuffer[0] & 0x04;
                                     //经度
                                     Double longitude = (double) ((eleBuffer[1] & 0xFF) << 24 |
-                                            (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF) << 8 |
+                                            (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[4] & 0xFF)) * 0.000001f;
                                     longitude = new BigDecimal(longitude).setScale(6, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setLongitude(longitude);
                                     //纬度
                                     Double latitude = (double) ((eleBuffer[5] & 0xFF) << 24 |
-                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[8] & 0xFF)) * 0.000001f;
                                     latitude = new BigDecimal(latitude).setScale(6, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
@@ -627,7 +638,8 @@ public class DataParserD2s implements IDataParser {
                                     dataPackPosition.setSpeed(speed);
                                     //海拔
                                     Double altitude = (double) ((eleBuffer[11] & 0xFF) << 24 |
-                                            (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF) << 8 |
+                                            (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[14] & 0xFF)) / 10;
                                     altitude = new BigDecimal(altitude).setScale(1, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
@@ -797,11 +809,13 @@ public class DataParserD2s implements IDataParser {
                                     for (int i = 0; i < canPacketNumber; i++) {
                                         //can id
                                         int canId = D2sDataPackUtil.getInt4Bigendian
-                                                (canAllBuffer, offset + i * 12, offset + i * 12 + 4);
+                                                (canAllBuffer, offset + i * 12, offset + i * 12 +
+                                                        4);
                                         byte[] canBuffer = D2sDataPackUtil.getRange(canAllBuffer,
                                                 offset + i * 12 + 4, offset + i * 12 + 12);
                                         byte[] canBufferAll = D2sDataPackUtil.getRange
-                                                (canAllBuffer, offset + i * 12, offset + i * 12 + 12);
+                                                (canAllBuffer, offset + i * 12, offset + i * 12 +
+                                                        12);
                                         DataPackCanVersion dataPackCanVersion = null;
                                         if (canId == (int) 0x18FF64DA) { //icu版本
                                             dataPackCanVersion = new DataPackCanVersion
@@ -1023,11 +1037,13 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
                                             D2sDataPackUtil.debug
-                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil
-                                                            .hexDump(canBuffer));
+                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" +
+                                                            ByteBufUtil
+                                                                    .hexDump(canBuffer));
                                             D2sDataPackUtil.debug
-                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil
-                                                            .hexDump(canBufferAll));
+                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" +
+                                                            ByteBufUtil
+                                                                    .hexDump(canBufferAll));
                                             int runstatus = (int) (bit64 & 0x03);//空调启动状态
                                             hvac.setRunStatus(runstatus);
                                             bit64 = bit64 >>> 2;
@@ -1053,8 +1069,9 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
                                             D2sDataPackUtil.debug
-                                                    ("HVAC_FaultList_MSG[0x1CFF01DE]--->" + ByteBufUtil
-                                                            .hexDump(canBuffer));
+                                                    ("HVAC_FaultList_MSG[0x1CFF01DE]--->" +
+                                                            ByteBufUtil
+                                                                    .hexDump(canBuffer));
                                             int errModel = 0;//模式电机故障
                                             if ((bit64 & 0x01) == 0x00) {
                                                 errModel = 0x00;
@@ -2178,13 +2195,15 @@ public class DataParserD2s implements IDataParser {
                                             float alowableVoltage = (float) ((bit64 & 0xFFFF) *
                                                     0.1f);//最高允许充电端电压
                                             alowableVoltage = BigDecimal.valueOf(alowableVoltage)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             bms.setAlowableVoltage(alowableVoltage);
                                             bit64 = bit64 >>> 16;
                                             float alowableCurrent = (float) ((bit64 & 0xFFFF) *
                                                     0.1f);//最高允许充电电流
                                             alowableCurrent = BigDecimal.valueOf(alowableCurrent)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             bms.setAlowableCurrent(alowableCurrent);
                                             bit64 = bit64 >>> 16;
                                             int isableCharge = (int) (bit64 & 0xFF);//
@@ -2225,8 +2244,9 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
                                             D2sDataPackUtil.debug
-                                                    ("BMS_chargerpower[0x18FF02F4]--->" + ByteBufUtil
-                                                            .hexDump(canBuffer));
+                                                    ("BMS_chargerpower[0x18FF02F4]--->" +
+                                                            ByteBufUtil
+                                                                    .hexDump(canBuffer));
                                             int charge10sPower = (int) (bit64 & 0xFFFF);//动力电池包
                                             // 10s 最大充电功率
                                             bms.setCharge10SPower(charge10sPower);
@@ -2263,7 +2283,8 @@ public class DataParserD2s implements IDataParser {
                                             float voltageRange = (float) (bit64 & 0xFF) * 0.5f;
                                             //母线电压
                                             voltageRange = BigDecimal.valueOf(voltageRange)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             mc.setVoltageRange(voltageRange);
                                             bit64 = bit64 >> 8;
                                             int motorTemprature = (int) (bit64 & 0xFF) - 40;//电机温度
@@ -2278,7 +2299,8 @@ public class DataParserD2s implements IDataParser {
                                             float motorCurrent = (float) (bit64 & 0xFFFF) * 0.5f;
                                             //电机相电流
                                             motorCurrent = BigDecimal.valueOf(motorCurrent)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             mc.setMotorCurrent(motorCurrent);
                                         } else if (canId == (int) 0x0CF12F05) {// MC_Info1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
@@ -2464,7 +2486,8 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >> 9;
                                             float inputCurrent = (bit64 & 0x01FF) * 0.1f;
                                             inputCurrent = BigDecimal.valueOf(inputCurrent)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             obc.setInCurrent(inputCurrent);
                                             bit64 = bit64 >> 9;
                                             int pfcVoltage = (int) (bit64 & 0x01FF);
@@ -2474,19 +2497,22 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >> 5;
                                             float dv12Voltage = (bit64 & 0xFF) * 0.1f;
                                             dv12Voltage = BigDecimal.valueOf(dv12Voltage)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             obc.setV12Voltage(dv12Voltage);
                                             bit64 = bit64 >> 8;
                                             float dv12Current = (bit64 & 0x3F) * 0.1f;
                                             dv12Current = BigDecimal.valueOf(dv12Current)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             obc.setV12Current(dv12Current);
                                             bit64 = bit64 >> 6;
                                             // reserve
                                             bit64 = bit64 >> 2;
                                             float outPowerLevel = (bit64 & 0xFF) * 0.1f;
                                             outPowerLevel = BigDecimal.valueOf(outPowerLevel)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
 
                                             bit64 = bit64 >> 8;
                                             int outCurrentLevel = (int) (bit64 & 0x3F);
@@ -2655,8 +2681,9 @@ public class DataParserD2s implements IDataParser {
                                     for (int i = 0; i < batteryPacketNumber; i++) {
                                         batteryVoltageList.add(new BigDecimal(((float) (
                                                 (eleBuffer[11 + i * 2] & 0xFF) << 8 |
-                                                        (eleBuffer[12 + i * 2] & 0xFF)) / 1000)).setScale
-                                                (3, BigDecimal.ROUND_HALF_UP).floatValue());
+                                                        (eleBuffer[12 + i * 2] & 0xFF)) / 1000))
+                                                .setScale
+                                                        (3, BigDecimal.ROUND_HALF_UP).floatValue());
                                     }
                                     dataPackBattery.setBatteryVoltages(batteryVoltageList);
                                     //-add
@@ -2723,7 +2750,8 @@ public class DataParserD2s implements IDataParser {
                                     dataPackOverview.setVehicleSpeed(vehicleSpeed);
                                     //累计里程
                                     Double mileAge = (double) ((eleBuffer[5] & 0xFF) << 24 |
-                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[8] & 0xFF));
                                     mileAge = new BigDecimal(mileAge).setScale(1, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
@@ -2823,15 +2851,18 @@ public class DataParserD2s implements IDataParser {
                                     System.arraycopy(dataBufferDelay, index, eleBuffer, 0, length);
                                     //打印调试信息
 
-                                    D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump(eleBuffer));
+                                    D2sDataPackUtil.debug("车辆位置数据--->" + ByteBufUtil.hexDump
+                                            (eleBuffer));
                                     //定位状态：0-有效定位；1-无效定位
                                     Integer isValidate = eleBuffer[0] & 0x01;
-                                    if(null != isValidate && 0 == isValidate) {
+                                    if (null != isValidate && 0 == isValidate) {
                                         // 有效定位-定位方式未知
-                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_UNKNOWN);
+                                        dataPackPosition.setPositioMode(DataPackPosition
+                                                .POSITION_MODE_UNKNOWN);
                                     } else {
                                         // 无效定位
-                                        dataPackPosition.setPositioMode(DataPackPosition.POSITION_MODE_INVALID);
+                                        dataPackPosition.setPositioMode(DataPackPosition
+                                                .POSITION_MODE_INVALID);
                                     }
                                     //0:北纬； 1:南纬
                                     Integer latType = eleBuffer[0] & 0x02;
@@ -2839,14 +2870,16 @@ public class DataParserD2s implements IDataParser {
                                     Integer lngType = eleBuffer[0] & 0x04;
                                     //经度
                                     Double longitude = (double) ((eleBuffer[1] & 0xFF) << 24 |
-                                            (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF) << 8 |
+                                            (eleBuffer[2] & 0xFF) << 16 | (eleBuffer[3] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[4] & 0xFF)) * 0.000001f;
                                     longitude = new BigDecimal(longitude).setScale(6, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
                                     dataPackPosition.setLongitude(longitude);
                                     //纬度
                                     Double latitude = (double) ((eleBuffer[5] & 0xFF) << 24 |
-                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF) << 8 |
+                                            (eleBuffer[6] & 0xFF) << 16 | (eleBuffer[7] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[8] & 0xFF)) * 0.000001f;
                                     latitude = new BigDecimal(latitude).setScale(6, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
@@ -2859,7 +2892,8 @@ public class DataParserD2s implements IDataParser {
                                     dataPackPosition.setSpeed(speed);
                                     //海拔
                                     Double altitude = (double) ((eleBuffer[11] & 0xFF) << 24 |
-                                            (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF) << 8 |
+                                            (eleBuffer[12] & 0xFF) << 16 | (eleBuffer[13] & 0xFF)
+                                            << 8 |
                                             (eleBuffer[14] & 0xFF)) / 10;
                                     altitude = new BigDecimal(altitude).setScale(1, BigDecimal
                                             .ROUND_HALF_UP).doubleValue();
@@ -3023,7 +3057,8 @@ public class DataParserD2s implements IDataParser {
                                     for (int i = 0; i < canPacketNumber; i++) {
                                         //can id
                                         int canId = D2sDataPackUtil.getInt4Bigendian
-                                                (canAllBuffer, offset + i * 12, offset + i * 12 + 4);
+                                                (canAllBuffer, offset + i * 12, offset + i * 12 +
+                                                        4);
                                         byte[] canBuffer = D2sDataPackUtil.getRange(canAllBuffer,
                                                 offset + i * 12 + 4, offset + i * 12 + 12);
                                         DataPackCanVersion dataPackCanVersion = null;
@@ -3242,8 +3277,9 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
                                             D2sDataPackUtil.debug
-                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" + ByteBufUtil
-                                                            .hexDump(canBuffer));
+                                                    ("HVAC_General_MSG[0x1CFF00DE]--->" +
+                                                            ByteBufUtil
+                                                                    .hexDump(canBuffer));
                                             int runstatus = (int) (bit64 & 0x03);//空调启动状态
                                             hvac.setRunStatus(runstatus);
                                             bit64 = bit64 >>> 2;
@@ -3269,8 +3305,9 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
                                             D2sDataPackUtil.debug
-                                                    ("HVAC_FaultList_MSG[0x1CFF01DE]--->" + ByteBufUtil
-                                                            .hexDump(canBuffer));
+                                                    ("HVAC_FaultList_MSG[0x1CFF01DE]--->" +
+                                                            ByteBufUtil
+                                                                    .hexDump(canBuffer));
                                             int errModel = 0;//模式电机故障
                                             if ((bit64 & 0x01) == 0x00) {
                                                 errModel = 0x00;
@@ -4392,13 +4429,15 @@ public class DataParserD2s implements IDataParser {
                                             float alowableVoltage = (float) ((bit64 & 0xFFFF) *
                                                     0.1f);//最高允许充电端电压
                                             alowableVoltage = BigDecimal.valueOf(alowableVoltage)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             bms.setAlowableVoltage(alowableVoltage);
                                             bit64 = bit64 >>> 16;
                                             float alowableCurrent = (float) ((bit64 & 0xFFFF) *
                                                     0.1f);//最高允许充电电流
                                             alowableCurrent = BigDecimal.valueOf(alowableCurrent)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             bms.setAlowableCurrent(alowableCurrent);
                                             bit64 = bit64 >>> 16;
                                             int isableCharge = (int) (bit64 & 0xFF);//
@@ -4439,8 +4478,9 @@ public class DataParserD2s implements IDataParser {
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
                                             //打印调试信息
                                             D2sDataPackUtil.debug
-                                                    ("BMS_chargerpower[0x18FF02F4]--->" + ByteBufUtil
-                                                            .hexDump(canBuffer));
+                                                    ("BMS_chargerpower[0x18FF02F4]--->" +
+                                                            ByteBufUtil
+                                                                    .hexDump(canBuffer));
                                             int charge10sPower = (int) (bit64 & 0xFFFF);//动力电池包
                                             // 10s 最大充电功率
                                             bms.setCharge10SPower(charge10sPower);
@@ -4477,7 +4517,8 @@ public class DataParserD2s implements IDataParser {
                                             float voltageRange = (float) (bit64 & 0xFF) * 0.5f;
                                             //母线电压
                                             voltageRange = BigDecimal.valueOf(voltageRange)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             mc.setVoltageRange(voltageRange);
                                             bit64 = bit64 >> 8;
                                             int motorTemprature = (int) (bit64 & 0xFF) - 40;//电机温度
@@ -4492,7 +4533,8 @@ public class DataParserD2s implements IDataParser {
                                             float motorCurrent = (float) (bit64 & 0xFFFF) * 0.5f;
                                             //电机相电流
                                             motorCurrent = BigDecimal.valueOf(motorCurrent)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             mc.setMotorCurrent(motorCurrent);
                                         } else if (canId == (int) 0x0CF12F05) {// MC_Info1
                                             long bit64 = D2sDataPackUtil.toLong(canBuffer);
@@ -4678,7 +4720,8 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >> 9;
                                             float inputCurrent = (bit64 & 0x01FF) * 0.1f;
                                             inputCurrent = BigDecimal.valueOf(inputCurrent)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             obc.setInCurrent(inputCurrent);
                                             bit64 = bit64 >> 9;
                                             int pfcVoltage = (int) (bit64 & 0x01FF);
@@ -4688,19 +4731,22 @@ public class DataParserD2s implements IDataParser {
                                             bit64 = bit64 >> 5;
                                             float dv12Voltage = (bit64 & 0xFF) * 0.1f;
                                             dv12Voltage = BigDecimal.valueOf(dv12Voltage)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             obc.setV12Voltage(dv12Voltage);
                                             bit64 = bit64 >> 8;
                                             float dv12Current = (bit64 & 0x3F) * 0.1f;
                                             dv12Current = BigDecimal.valueOf(dv12Current)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
                                             obc.setV12Current(dv12Current);
                                             bit64 = bit64 >> 6;
                                             // reserve
                                             bit64 = bit64 >> 2;
                                             float outPowerLevel = (bit64 & 0xFF) * 0.1f;
                                             outPowerLevel = BigDecimal.valueOf(outPowerLevel)
-                                                    .setScale(1, BigDecimal.ROUND_HALF_UP).floatValue();
+                                                    .setScale(1, BigDecimal.ROUND_HALF_UP)
+                                                    .floatValue();
 
                                             bit64 = bit64 >> 8;
                                             int outCurrentLevel = (int) (bit64 & 0x3F);
@@ -4879,12 +4925,14 @@ public class DataParserD2s implements IDataParser {
                                 if (tboxStatusBuf[index] == (byte) 0x01) { // 电源状态
                                     statusList.add(new DataPackStatus.Status("电源状态标志",
                                             DatatypeConverter.printHexBinary(new
-                                                    byte[]{tboxStatusBuf[index + 1]}), "0：电源故障 1：电源正常"));
+                                                    byte[]{tboxStatusBuf[index + 1]}), "0：电源故障 " +
+                                            "1：电源正常"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x02) { // 通电状态
                                     statusList.add(new DataPackStatus.Status("通电状态标志",
                                             DatatypeConverter.printHexBinary(new
-                                                    byte[]{tboxStatusBuf[index + 1]}), "0：断电 1：通电"));
+                                                    byte[]{tboxStatusBuf[index + 1]}), "0：断电 " +
+                                            "1：通电"));
                                     index += 2;
                                 } else if (tboxStatusBuf[index] == (byte) 0x03) { // 通信传输状态
                                     statusList.add(new DataPackStatus.Status("通信传输状态标志",
@@ -4934,11 +4982,15 @@ public class DataParserD2s implements IDataParser {
                                 String paramValue;
                                 //参数值
                                 if (paramId == 0x01 || paramId == 0x02 || paramId == 0x03 ||
-                                        paramId == 0x06 || paramId == 0x0a || paramId == 0x0b || paramId
-                                        == 0x0f || paramId == 0x82 || paramId == 0x84 || paramId == 0x85
+                                        paramId == 0x06 || paramId == 0x0a || paramId == 0x0b ||
+                                        paramId
+                                                == 0x0f || paramId == 0x82 || paramId == 0x84 ||
+                                        paramId
+                                        == 0x85
                                         || paramId == 0x86 || paramId == 0x87 || paramId == 0x88 ||
-                                        paramId == 0x89 || paramId == 0x8a || paramId == 0x8b || paramId
-                                        == 0x8e) {
+                                        paramId == 0x89 || paramId == 0x8a || paramId == 0x8b ||
+                                        paramId
+                                                == 0x8e) {
                                     paramValue = Integer.toString(D2sDataPackUtil.readUInt2
                                             (buffer));
                                 } else if (paramId == 0x05 || paramId == 0x07 || paramId == 0x08
