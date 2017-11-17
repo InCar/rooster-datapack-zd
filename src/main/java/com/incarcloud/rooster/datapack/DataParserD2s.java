@@ -6,7 +6,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
-import org.springframework.beans.BeanUtils;
 
 import javax.xml.bind.DatatypeConverter;
 import java.math.BigDecimal;
